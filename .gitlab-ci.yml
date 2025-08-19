@@ -1,0 +1,24 @@
+stages:
+- verify
+
+# Use a tiny image so the job always has a shell to run
+image: alpine:3.20
+
+variables:
+  # Proovided in Gravity's External Image Pipeline UI
+  IMAGE_URI: ""
+  IMAGE_NAME: ""
+  TEAM_NAME: ""
+
+verify:env:
+  stage: verify
+  script:
+  - echo "Repo OK. CI is wired up."
+  - echo "IMAGE_URI=${IMAGE_URI}"
+  - echo "IMAGE_NAME=${IMAGE_NAME}"
+  - echo "TEAM_NAME=${TEAM_NAME}"
+  - echo "Next ticket will add docker build/push steps."
+
+  rules:
+  # Allow you to run this manually from the UI; doesn't trigger on every push
+  - when: manual
