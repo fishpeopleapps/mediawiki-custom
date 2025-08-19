@@ -1,0 +1,32 @@
+services:
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: mediawiki
+      MARIADB_USER: wikiuser
+      MARIADB_PASSWORD: changeme
+      MARIADB_ROOT_PASSWORD: rootpass
+    volumes:
+      - mw_db_data:/var/lib/mysql
+
+  wiki:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MEDIAWIKI_VERSION: "1.43.1"
+    image: space-wiki/mediawiki-php83:base
+    depends_on: [db]
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    # First run: do NOT mount LocalSettings yet; the installer will generate it.
+    # After installer, uncomment the next line:
+    # volumes:
+    #   - ./LocalSettings.php:/var/www/html/LocalSettings.php:ro
+    # Optional: persist uploads if you plan to test them
+    #   - ./images:/var/www/html/images
+
+volumes:
+  mw_db_data:

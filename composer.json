@@ -1,0 +1,13 @@
+{
+  "name": "space-wiki/mediawiki",
+  "description": "Custom MediaWiki image for Space Wiki",
+  "type": "project",
+  "license": "proprietary",
+  "require": {
+    "php": "^8.3"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  }
+}

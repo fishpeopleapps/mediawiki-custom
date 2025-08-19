@@ -1,0 +1,33 @@
+# Dependencies & tooling
+/vendor/
+/node_modules/
+composer.phar
+
+# Runtime/media
+/images/
+images/tmp/
+/cache/
+/tmp/
+/logs/
+*.log
+
+# Env &
+.env
+.env.*
+
+# Build artifacts
+/dist/
+/build/
+/coverage/
+.phpunit.result.cache
+clover.xml
+
+# Docker/local overrides
+docker-compose.override.yml
+.docker/
+
+# Editors & OS files
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
