@@ -1,9 +1,14 @@
 # syntax=docker/dockerfile:1.7
 FROM php:8.3-apache
 
-# --- Build args (tune these per environment) ---
-ARG MEDIAWIKI_VERSION=1.43.1
-ARG MEDIAWIKI_TARBALL=https://releases.wikimedia.org/mediawiki/${MEDIAWIKI_VERSION%.*}/mediawiki-${MEDIAWIKI_VERSION}.tar.gz
+# --- Build args ---
+ARG MEDIAWIKI_VERSION=1.43.3
+ENV MEDIAWIKI_TARBALL=https://releases.wikimedia.org/mediawiki/1.43/mediawiki-1.43.3.tar.gz
+
+# Composer + vendors
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+RUN set -eux; cd /var/www/html; COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --prefer-dist --no-interaction --no-progress
+
 
 # --- System deps for PHP extensions used by MediaWiki ---
 RUN set -eux; \
@@ -19,6 +24,7 @@ RUN set -eux; \
       libxml2-dev \
       imagemagick \
       ghostscript \
+      ffmpeg \
       mariadb-client \
       curl \
       ca-certificates \
@@ -39,6 +45,7 @@ RUN set -eux; \
       xml \
       zip \
       exif \
+      pdo_mysql \
     ; \
     { \
       echo 'opcache.enable=1'; \
@@ -55,18 +62,15 @@ RUN set -eux; \
 RUN a2enmod rewrite headers expires && \
     sed -ri 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# Document root will be the MediaWiki directory
 ENV APACHE_DOCUMENT_ROOT=/var/www/html
-
 WORKDIR /var/www
 
 # --- Fetch & unpack MediaWiki tarball ---
 RUN set -eux; \
-    curl -fsSL "${MEDIAWIKI_TARBALL}" -o /tmp/mediawiki.tar.gz; \
-    tar -xzf /tmp/mediawiki.tar.gz -C /var/www; \
-    rm /tmp/mediawiki.tar.gz; \
-    mv /var/www/mediawiki-${MEDIAWIKI_VERSION}/* "${APACHE_DOCUMENT_ROOT}/"; \
-    rm -rf /var/www/mediawiki-${MEDIAWIKI_VERSION} \
+    mkdir -p "${APACHE_DOCUMENT_ROOT}" && \
+    curl -fsSL "${MEDIAWIKI_TARBALL}" -o /tmp/mediawiki.tar.gz && \
+    tar -xzf /tmp/mediawiki.tar.gz -C "${APACHE_DOCUMENT_ROOT}" --strip-components=1 && \
+    rm -f /tmp/mediawiki.tar.gz && \
     chown -R www-data:www-data "${APACHE_DOCUMENT_ROOT}"
 
 # --- Create writable dirs commonly used by MW (if you plan to use file cache/uploads) ---
