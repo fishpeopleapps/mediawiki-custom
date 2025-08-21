@@ -138,3 +138,23 @@ wfLoadSkin( 'Vector' );
 # End of automatically generated settings.
 # Add more configuration options below.
 
+wfLoadExtension( 'Variables' );
+wfLoadExtension( 'Loops' );
+wfLoadExtension( 'LabeledSectionTransclusion' );
+wfLoadExtension( 'CSS' );
+wfLoadExtension( 'TemplateStyles' );
+wfLoadExtension( 'TemplateWizard' );
+wfLoadExtension( 'CodeMirror' );
+wfLoadExtension( 'AdvancedSearch' );
+wfLoadExtension( 'DisplayTitle' );
+wfLoadExtension( 'HeaderTabs' );
+wfLoadExtension( 'MyVariables' );
+wfLoadExtension( 'GlobalNotice' );
+wfLoadExtension( 'ContributionScores' );
+wfLoadExtension( 'WatchAnalytics' );
+wfLoadExtension( 'Widgets' );
+wfLoadExtension( 'UploadWizard' );
+wfLoadExtension( 'VEForAll' );
+wfLoadExtension( 'CollapsibleSections' );
+wfLoadSkin( 'Citizen' );  // skin
+

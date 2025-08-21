@@ -1,0 +1,147 @@
+# SpaceWiki extensions & skins for MW 1.43.x — no inherits.
+# Fetch script clones these into /var/www/html/{extensions,skins}
+
+extensions:
+  # --- Core helpers / UI ---
+  - AdvancedSearch:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/AdvancedSearch
+        branch: REL1_43
+  - CodeMirror:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/CodeMirror
+        branch: REL1_43
+  - TemplateWizard:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/TemplateWizard
+        branch: REL1_43
+  - TemplateStyles:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/TemplateStyles
+        branch: REL1_43
+  - LabeledSectionTransclusion:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/LabeledSectionTransclusion
+        branch: REL1_43
+  - Variables:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/Variables
+        branch: REL1_43
+  - MyVariables:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/MyVariables
+        branch: REL1_43
+  - Loops:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/Loops
+        branch: REL1_43
+  - CSS:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/CSS
+        branch: REL1_43
+  - DisplayTitle:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/DisplayTitle
+        branch: REL1_43
+  - HeaderTabs:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/HeaderTabs
+        branch: REL1_43
+  - GlobalNotice:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/GlobalNotice
+        branch: REL1_43
+  - ContributionScores:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/ContributionScores
+        branch: REL1_43
+  - WatchAnalytics:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/WatchAnalytics
+        branch: REL1_43
+  - Widgets:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/Widgets
+        branch: REL1_43
+  - CollapsibleSections:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/CollapsibleSections
+        branch: REL1_43
+  - HitCounters:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/HitCounters
+        branch: master
+  - VECancelButton:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/VECancelButton
+        branch: master
+
+  # --- Bootstrap stack ---
+  - Bootstrap:
+        repository: https://github.com/ProfessionalWiki/Bootstrap
+        branch: master
+  - BootstrapComponents:
+        repository: https://github.com/oetterer/BootstrapComponents
+        branch: master
+
+  # --- Data / forms ---
+  - PageForms:
+        repository: https://github.com/wikimedia/mediawiki-extensions-PageForms.git
+        commit: 35099cf9fab298ceb5fbc51ed2c721eae2728406 # 6.0.0
+  - ExternalData:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/ExternalData
+        branch: REL1_43
+  - Cargo:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/Cargo
+        branch: REL1_43
+  - DataTransfer:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/DataTransfer
+        branch: REL1_43
+  - CIForms:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/CIForms
+        branch: master
+
+  # --- SMW stack ---
+  - SemanticMediaWiki:
+        repository: https://github.com/SemanticMediaWiki/SemanticMediaWiki.git
+        tag: 5.0.2
+  - SemanticResultFormats:
+        repository: https://github.com/SemanticMediaWiki/SemanticResultFormats.git
+        commit: 36bed50f3df91e92fd0823245547a1525a3f3d0d # 5.0.0
+  - SemanticCompoundQueries:
+        repository: https://github.com/SemanticMediaWiki/SemanticCompoundQueries.git
+        commit: 37872efe470a01294da9afeb4b109173665169f5 # 3.0.0-beta
+  - SemanticExtraSpecialProperties:
+        repository: https://github.com/SemanticMediaWiki/SemanticExtraSpecialProperties.git
+        tag: 4.0.0
+
+  # --- Search (Elasticsearch) ---
+  - Elastica:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/Elastica
+        branch: REL1_43
+  - CirrusSearch:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/CirrusSearch
+        branch: REL1_43
+
+  # --- Media / upload ---
+  - UploadWizard:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/UploadWizard
+        branch: REL1_43
+  - SimpleBatchUpload:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/SimpleBatchUpload
+        branch: REL1_43
+  - TimedMediaHandler:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/TimedMediaHandler
+        branch: REL1_43
+  - VEForAll:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/VEForAll
+        branch: REL1_43
+
+  # --- Auth ---
+  - PluggableAuth:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/PluggableAuth
+        branch: REL1_43
+  - JWTAuth:
+        repository: https://github.com/wikimedia/mediawiki-extensions-JWTAuth.git
+        branch: master
+
+  # --- Misc / language / glossary ---
+  - Lingo:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/Lingo
+        branch: REL1_43
+  - ApprovedRevs:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/ApprovedRevs
+        branch: REL1_43
+  - SaveSpinner:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/SaveSpinner
+        branch: REL1_43
+  - WikiForum:
+        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/WikiForum
+        branch: REL1_43
+
+skins:
+  - Citizen:
+        repository: https://github.com/StarCitizenTools/mediawiki-skins-Citizen
+        branch: main
