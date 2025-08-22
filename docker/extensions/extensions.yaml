@@ -109,9 +109,6 @@ extensions:
   - UploadWizard:
         repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/UploadWizard
         branch: REL1_43
-  - SimpleBatchUpload:
-        repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/SimpleBatchUpload
-        branch: REL1_43
   - TimedMediaHandler:
         repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/TimedMediaHandler
         branch: REL1_43

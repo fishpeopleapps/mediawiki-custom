@@ -138,23 +138,51 @@ wfLoadSkin( 'Vector' );
 # End of automatically generated settings.
 # Add more configuration options below.
 
-wfLoadExtension( 'Variables' );
-wfLoadExtension( 'Loops' );
-wfLoadExtension( 'LabeledSectionTransclusion' );
+// ===== Order-sensitive prelude (load these first) =====
+wfLoadExtension( 'Elastica' );         
+wfLoadExtension( 'PluggableAuth' );  
+wfLoadExtension( 'SemanticMediaWiki' ); 
+// enableSemantics( 'spacewiki.local' ); // <-- set your site domain if using SMW
+
+// ===== All other extensions (A → Z) =====
+wfLoadExtension( 'AdvancedSearch' );
+wfLoadExtension( 'ApprovedRevs' );
+wfLoadExtension( 'Bootstrap' );
+wfLoadExtension( 'BootstrapComponents' );
+wfLoadExtension( 'Cargo' );
+wfLoadExtension( 'CIForms' );
+wfLoadExtension( 'CirrusSearch' );        
+wfLoadExtension( 'CodeMirror' );
+wfLoadExtension( 'CollapsibleSections' );
+wfLoadExtension( 'ContributionScores' );
 wfLoadExtension( 'CSS' );
+wfLoadExtension( 'DataTransfer' );
+wfLoadExtension( 'DisplayTitle' );      
+wfLoadExtension( 'ExternalData' );
+wfLoadExtension( 'GlobalNotice' );
+wfLoadExtension( 'HeaderTabs' );
+wfLoadExtension( 'HitCounters' );
+wfLoadExtension( 'JWTAuth' );        
+wfLoadExtension( 'LabeledSectionTransclusion' );
+wfLoadExtension( 'Lingo' );
+wfLoadExtension( 'Loops' );
+wfLoadExtension( 'MyVariables' );
+wfLoadExtension( 'PageForms' );
+wfLoadExtension( 'SaveSpinner' );
+wfLoadExtension( 'SemanticCompoundQueries' );  
+wfLoadExtension( 'SemanticExtraSpecialProperties' ); 
+wfLoadExtension( 'SemanticResultFormats' );   
 wfLoadExtension( 'TemplateStyles' );
 wfLoadExtension( 'TemplateWizard' );
-wfLoadExtension( 'CodeMirror' );
-wfLoadExtension( 'AdvancedSearch' );
-wfLoadExtension( 'DisplayTitle' );
-wfLoadExtension( 'HeaderTabs' );
-wfLoadExtension( 'MyVariables' );
-wfLoadExtension( 'GlobalNotice' );
-wfLoadExtension( 'ContributionScores' );
+wfLoadExtension( 'TimedMediaHandler' );
+wfLoadExtension( 'UploadWizard' );
+wfLoadExtension( 'VECancelButton' );
+wfLoadExtension( 'Variables' );
+wfLoadExtension( 'VEForAll' );
 wfLoadExtension( 'WatchAnalytics' );
 wfLoadExtension( 'Widgets' );
-wfLoadExtension( 'UploadWizard' );
-wfLoadExtension( 'VEForAll' );
-wfLoadExtension( 'CollapsibleSections' );
-wfLoadSkin( 'Citizen' );  // skin
+wfLoadExtension( 'WikiForum' );
+
+
+wfLoadSkin( 'Citizen' );
 
