@@ -144,6 +144,33 @@ wfLoadExtension( 'PluggableAuth' );
 wfLoadExtension( 'SemanticMediaWiki' ); 
 // enableSemantics( 'spacewiki.local' ); // <-- set your site domain if using SMW
 
+################################################
+# Extensions that are bundled with MediaWiki Core
+################################################
+wfLoadExtension('CategoryTree'); 
+wfLoadExtension('Cite');
+wfLoadExtension('Echo'); 
+$wgEchoUseJobQueue = true;
+wfLoadExtension('Gadgets');
+wfLoadExtension('ImageMap'); 
+wfLoadExtension('InputBox'); 
+wfLoadExtension('Math'); 
+wfLoadExtension('MultimediaViewer'); 
+wfLoadExtension('Nuke');  
+wfLoadExtension('PageImages'); 
+wfLoadExtension('ParserFunctions'); 
+$wgPFEnableStringFunctions = true;
+wfLoadExtension('PdfHandler'); 
+wfLoadExtension('Scribunto');
+$wgScribuntoDefaultEngine = 'luastandalone';
+wfLoadExtension('TemplateData');  
+wfLoadExtension('TextExtracts');  
+wfLoadExtension('Thanks'); 
+$wgThanksConfirmationRequired = false;
+wfLoadExtension('VisualEditor');   
+$wgGroupPermissions['user']['writeapi'] = true;
+wfLoadExtension('WikiEditor'); 
+
 // ===== All other extensions (A → Z) =====
 wfLoadExtension( 'AdvancedSearch' );
 wfLoadExtension( 'ApprovedRevs' );

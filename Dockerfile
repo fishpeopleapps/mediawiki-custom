@@ -12,7 +12,22 @@ RUN set -eux; \
     curl -fsSL "${MEDIAWIKI_TARBALL}" -o /tmp/mediawiki.tar.gz && \
     tar -xzf /tmp/mediawiki.tar.gz -C "${APACHE_DOCUMENT_ROOT}" --strip-components=1 && \
     rm -f /tmp/mediawiki.tar.gz && \
-    chown -R www-data:www-data "${APACHE_DOCUMENT_ROOT}"
+    chown -R www-data:www-data "${APACHE_DOCUMENT_ROOT}" && \
+    chown -R www-data:www-data "${APACHE_DOCUMENT_ROOT}/vendor"
+
+
+# 2.5. Bundle MediaWiki vendor deps (match 1.43.x with REL1_43)
+ARG MEDIAWIKI_VENDOR_BRANCH=REL1_43
+RUN set -eux; \
+    curl -fsSL "https://codeload.github.com/wikimedia/mediawiki-vendor/tar.gz/refs/heads/${MEDIAWIKI_VENDOR_BRANCH}" -o /tmp/vendor.tgz && \
+    tar -xzf /tmp/vendor.tgz -C /tmp && \
+    rm -rf "${APACHE_DOCUMENT_ROOT}/vendor" && \
+    mv /tmp/mediawiki-vendor-* "${APACHE_DOCUMENT_ROOT}/vendor" && \
+    rm -rf /tmp/vendor.tgz /tmp/mediawiki-vendor-* && \
+    # sanity checks
+    test -f "${APACHE_DOCUMENT_ROOT}/vendor/autoload.php" && \
+    test -d "${APACHE_DOCUMENT_ROOT}/vendor/psr/log"
+
 
 # 3. Run Tools
 RUN set -eux; \
@@ -23,14 +38,11 @@ RUN set -eux; \
       git curl unzip ca-certificates \
   ; \
   apt-get clean; \
-  rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* /var/tmp/* \
+  rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* /var/tmp/* && \
   git config --global --add safe.directory /var/www/html || true
 
 # 4. Add Working Directory
 WORKDIR /var/www/html
-
-# 5. Install Composer
-COPY composer.json composer.lock* /var/www/html/
 
 # 6. yq for YAML parsing
 RUN curl -fsSL https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64 \
@@ -84,11 +96,12 @@ RUN set -eux; \
       zip \
       exif \
       pdo_mysql \
+      calendar \
     ; 
 
-
-# 10.5 - Run Composer Install
-RUN COMPOSER_ALLOW_SUPERUSER=1 composer install \
+# 10.5 Provide extension deps without touching core's composer.json/lock
+COPY composer.local.json /var/www/html/composer.local.json
+RUN COMPOSER_ALLOW_SUPERUSER=1 composer update \
     --no-dev --prefer-dist --no-interaction --no-progress
 
 # 11. Apache tweaks
@@ -101,7 +114,10 @@ RUN set -eux; \
       "${APACHE_DOCUMENT_ROOT}/images" \
       "${APACHE_DOCUMENT_ROOT}/cache"
 
+# 13. Note Install path for Vendor files!
+ENV MW_COMPOSER_VENDOR_DIR=/var/www/html/vendor
 
-# 13. Expose the port & provide healthcheck
+
+# 14. Expose the port & provide healthcheck
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=5s --retries=5 CMD curl -fsS http://localhost/ || exit 1
