@@ -44,7 +44,7 @@ extensions:
             branch: REL1_43
     - WatchAnalytics:
             repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/WatchAnalytics
-            branch: REL1_43
+            tag: 4.5
     - Widgets:
             repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/Widgets
             branch: REL1_43

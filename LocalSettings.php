@@ -139,8 +139,8 @@ wfLoadSkin( 'Vector' );
 # Add more configuration options below.
 
 // ===== Order-sensitive prelude (load these first) =====
-wfLoadExtension( 'Elastica' );         
-wfLoadExtension( 'PluggableAuth' );  
+// wfLoadExtension( 'Elastica' );         
+// wfLoadExtension( 'PluggableAuth' );  
 wfLoadExtension( 'SemanticMediaWiki' ); 
 // enableSemantics( 'spacewiki.local' ); // <-- set your site domain if using SMW
 
@@ -172,13 +172,13 @@ $wgGroupPermissions['user']['writeapi'] = true;
 wfLoadExtension('WikiEditor'); 
 
 // ===== All other extensions (A → Z) =====
-wfLoadExtension( 'AdvancedSearch' );
+// wfLoadExtension( 'AdvancedSearch' );
 wfLoadExtension( 'ApprovedRevs' );
 wfLoadExtension( 'Bootstrap' );
 wfLoadExtension( 'BootstrapComponents' );
 wfLoadExtension( 'Cargo' );
 wfLoadExtension( 'CIForms' );
-wfLoadExtension( 'CirrusSearch' );        
+// wfLoadExtension( 'CirrusSearch' );        
 wfLoadExtension( 'CodeMirror' );
 wfLoadExtension( 'CollapsibleSections' );
 wfLoadExtension( 'ContributionScores' );
@@ -189,7 +189,7 @@ wfLoadExtension( 'ExternalData' );
 wfLoadExtension( 'GlobalNotice' );
 wfLoadExtension( 'HeaderTabs' );
 wfLoadExtension( 'HitCounters' );
-wfLoadExtension( 'JWTAuth' );        
+// wfLoadExtension( 'JWTAuth' );        
 wfLoadExtension( 'LabeledSectionTransclusion' );
 wfLoadExtension( 'Lingo' );
 wfLoadExtension( 'Loops' );
@@ -212,4 +212,7 @@ wfLoadExtension( 'WikiForum' );
 
 
 wfLoadSkin( 'Citizen' );
+
+
+$wgShowExceptionDetails = true;
 
