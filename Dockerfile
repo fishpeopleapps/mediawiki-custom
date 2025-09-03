@@ -67,12 +67,14 @@ RUN set -eux; \
       libicu-dev \
       libjpeg-dev \
       libpng-dev \
+      libwebp-dev \
       libfreetype6-dev \
       libzip-dev \
       zlib1g-dev \
       libonig-dev \
       libxml2-dev \
       imagemagick \
+      libmagickwand-dev \
       ghostscript \
       ffmpeg \
       mariadb-client \
@@ -99,6 +101,12 @@ RUN set -eux; \
       calendar \
     ; 
 
+# 10.2 PECL extensions
+RUN set -eux; \
+    pecl install apcu imagick && \
+    docker-php-ext-enable apcu imagick
+
+
 # 10.5 Provide extension deps without touching core's composer.json/lock
 COPY composer.local.json /var/www/html/composer.local.json
 RUN COMPOSER_ALLOW_SUPERUSER=1 composer update \
@@ -107,6 +115,10 @@ RUN COMPOSER_ALLOW_SUPERUSER=1 composer update \
 # 11. Apache tweaks
 RUN a2enmod rewrite headers expires && \
     sed -ri 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+
+# 11.1 Allow .htaccess overrides
+RUN printf "<Directory /var/www/html>\nAllowOverride All\n</Directory>\n" \
+      > /etc/apache2/conf-available/override.conf && a2enconf override
 
 # 12. Writable dirs for file cache/uploads
 RUN set -eux; \

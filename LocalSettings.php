@@ -171,7 +171,7 @@ wfLoadExtension('VisualEditor');
 $wgGroupPermissions['user']['writeapi'] = true;
 wfLoadExtension('WikiEditor'); 
 
-// ===== All other extensions (A → Z) =====
+// ===== EXTENSIONS =====
 // wfLoadExtension( 'AdvancedSearch' );
 wfLoadExtension( 'ApprovedRevs' );
 wfLoadExtension( 'Bootstrap' );
@@ -186,6 +186,7 @@ wfLoadExtension( 'CSS' );
 wfLoadExtension( 'DataTransfer' );
 wfLoadExtension( 'DisplayTitle' );      
 wfLoadExtension( 'ExternalData' );
+wfLoadExtension( 'FlexForm' );
 wfLoadExtension( 'GlobalNotice' );
 wfLoadExtension( 'HeaderTabs' );
 wfLoadExtension( 'HitCounters' );
@@ -196,6 +197,7 @@ wfLoadExtension( 'Loops' );
 wfLoadExtension( 'MyVariables' );
 wfLoadExtension( 'PageForms' );
 wfLoadExtension( 'SaveSpinner' );
+wfLoadExtension( 'SemanticApprovedRevs' );
 wfLoadExtension( 'SemanticCompoundQueries' );  
 wfLoadExtension( 'SemanticExtraSpecialProperties' ); 
 wfLoadExtension( 'SemanticResultFormats' );   

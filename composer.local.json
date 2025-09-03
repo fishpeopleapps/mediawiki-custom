@@ -1,7 +1,10 @@
 {
   "require": {
+    "james-heinrich/getid3": "^1.9",
+    "mediawiki/semantic-approved-revs": "0.10.x-dev",
     "mediawiki/semantic-media-wiki": "6.0.1",
     "mediawiki/semantic-result-formats": "5.0",
-    "mediawiki/scss": "4.0.0" 
+    "mediawiki/scss": "4.0.0",
+    "open-csp/flex-form": "dev-REL1_43"
   }
 }
