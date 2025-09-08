@@ -72,13 +72,17 @@ RUN set -eux; \
       libzip-dev \
       zlib1g-dev \
       libonig-dev \
+      librsvg2-bin \
       libxml2-dev \
+      liblua5.1-0-dev \
+      pkg-config \
       imagemagick \
       libmagickwand-dev \
       ghostscript \
       ffmpeg \
       mariadb-client \
       curl \
+      python3 python3-pygments \
       ca-certificates \
       unzip \
       gnupg \
@@ -104,6 +108,7 @@ RUN set -eux; \
 # 10.2 PECL extensions
 RUN set -eux; \
     pecl install apcu imagick && \
+    pecl install LuaSandbox-4.1.2 && docker-php-ext-enable luasandbox && \
     docker-php-ext-enable apcu imagick
 
 
@@ -114,9 +119,10 @@ RUN COMPOSER_ALLOW_SUPERUSER=1 composer update \
 
 # 11. Apache tweaks
 RUN a2enmod rewrite headers expires && \
-    sed -ri 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+    sed -ri 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf && \
+    sed -i 's#</VirtualHost>#\tAllowEncodedSlashes NoDecode\n</VirtualHost>#' /etc/apache2/sites-available/000-default.conf
 
-# 11.1 Allow .htaccess overrides
+# 11.5 Allow .htaccess overrides
 RUN printf "<Directory /var/www/html>\nAllowOverride All\n</Directory>\n" \
       > /etc/apache2/conf-available/override.conf && a2enconf override
 
@@ -133,3 +139,7 @@ ENV MW_COMPOSER_VENDOR_DIR=/var/www/html/vendor
 # 14. Expose the port & provide healthcheck
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=5s --retries=5 CMD curl -fsS http://localhost/ || exit 1
+
+# 15 PHP overrides 
+COPY docker/php/php-overrides.ini /usr/local/etc/php/conf.d/99-overrides.ini
+
