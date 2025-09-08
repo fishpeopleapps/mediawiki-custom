@@ -186,7 +186,7 @@ wfLoadExtension( 'CSS' );
 wfLoadExtension( 'DataTransfer' );
 wfLoadExtension( 'DisplayTitle' );      
 wfLoadExtension( 'ExternalData' );
-wfLoadExtension( 'FlexForm' );
+// wfLoadExtension( 'FlexForm' ); // currently removed because phpoffice - see backlog ticket
 wfLoadExtension( 'GlobalNotice' );
 wfLoadExtension( 'HeaderTabs' );
 wfLoadExtension( 'HitCounters' );
