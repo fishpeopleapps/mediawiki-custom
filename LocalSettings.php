@@ -138,3 +138,83 @@ wfLoadSkin( 'Vector' );
 # End of automatically generated settings.
 # Add more configuration options below.
 
+// ===== Order-sensitive prelude (load these first) =====
+// wfLoadExtension( 'Elastica' );         
+// wfLoadExtension( 'PluggableAuth' );  
+wfLoadExtension( 'SemanticMediaWiki' ); 
+// enableSemantics( 'spacewiki.local' ); // <-- set your site domain if using SMW
+
+################################################
+# Extensions that are bundled with MediaWiki Core
+################################################
+wfLoadExtension('CategoryTree'); 
+wfLoadExtension('Cite');
+wfLoadExtension('Echo'); 
+$wgEchoUseJobQueue = true;
+wfLoadExtension('Gadgets');
+wfLoadExtension('ImageMap'); 
+wfLoadExtension('InputBox'); 
+wfLoadExtension('Math'); 
+wfLoadExtension('MultimediaViewer'); 
+wfLoadExtension('Nuke');  
+wfLoadExtension('PageImages'); 
+wfLoadExtension('ParserFunctions'); 
+$wgPFEnableStringFunctions = true;
+wfLoadExtension('PdfHandler'); 
+wfLoadExtension('Scribunto');
+$wgScribuntoDefaultEngine = 'luastandalone';
+wfLoadExtension('TemplateData');  
+wfLoadExtension('TextExtracts');  
+wfLoadExtension('Thanks'); 
+$wgThanksConfirmationRequired = false;
+wfLoadExtension('VisualEditor');   
+$wgGroupPermissions['user']['writeapi'] = true;
+wfLoadExtension('WikiEditor'); 
+
+// ===== EXTENSIONS =====
+// wfLoadExtension( 'AdvancedSearch' );
+wfLoadExtension( 'ApprovedRevs' );
+wfLoadExtension( 'Bootstrap' );
+wfLoadExtension( 'BootstrapComponents' );
+wfLoadExtension( 'Cargo' );
+wfLoadExtension( 'CIForms' );
+// wfLoadExtension( 'CirrusSearch' );        
+wfLoadExtension( 'CodeMirror' );
+wfLoadExtension( 'CollapsibleSections' );
+wfLoadExtension( 'ContributionScores' );
+wfLoadExtension( 'CSS' );
+wfLoadExtension( 'DataTransfer' );
+wfLoadExtension( 'DisplayTitle' );      
+wfLoadExtension( 'ExternalData' );
+wfLoadExtension( 'FlexForm' );
+wfLoadExtension( 'GlobalNotice' );
+wfLoadExtension( 'HeaderTabs' );
+wfLoadExtension( 'HitCounters' );
+// wfLoadExtension( 'JWTAuth' );        
+wfLoadExtension( 'LabeledSectionTransclusion' );
+wfLoadExtension( 'Lingo' );
+wfLoadExtension( 'Loops' );
+wfLoadExtension( 'MyVariables' );
+wfLoadExtension( 'PageForms' );
+wfLoadExtension( 'SaveSpinner' );
+wfLoadExtension( 'SemanticApprovedRevs' );
+wfLoadExtension( 'SemanticCompoundQueries' );  
+wfLoadExtension( 'SemanticExtraSpecialProperties' ); 
+wfLoadExtension( 'SemanticResultFormats' );   
+wfLoadExtension( 'TemplateStyles' );
+wfLoadExtension( 'TemplateWizard' );
+wfLoadExtension( 'TimedMediaHandler' );
+wfLoadExtension( 'UploadWizard' );
+wfLoadExtension( 'VECancelButton' );
+wfLoadExtension( 'Variables' );
+wfLoadExtension( 'VEForAll' );
+wfLoadExtension( 'WatchAnalytics' );
+wfLoadExtension( 'Widgets' );
+wfLoadExtension( 'WikiForum' );
+
+
+wfLoadSkin( 'Citizen' );
+
+
+$wgShowExceptionDetails = true;
+
