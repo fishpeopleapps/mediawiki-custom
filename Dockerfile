@@ -35,6 +35,17 @@ RUN set -eux; \
   printf "Package: libcjson1\nVersion: %s-0~custom1\nSection: libs\nPriority: optional\nArchitecture: arm64\nDepends: libc6 (>= 2.17)\nMaintainer: you <you@example.com>\nDescription: Ultralightweight JSON parser in ANSI C (custom build)\n" "$CJSON_VER" > /tmp/pkgroot/DEBIAN/control; \
   dpkg-deb --build /tmp/pkgroot /tmp/libcjson1_${CJSON_VER}-0~custom1_arm64.deb
 
+# 0.4 Build yq v4.44.3 with patched Go (fixes CVE-2025-22871 exposure)
+FROM golang:1.24.2-bookworm AS yq-builder
+ARG YQ_VERSION=v4.44.3
+WORKDIR /src
+RUN set -eux; \
+  apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && rm -rf /var/lib/apt/lists/*; \
+  curl -fsSL -o yq.tgz "https://github.com/mikefarah/yq/archive/refs/tags/${YQ_VERSION}.tar.gz"; \
+  tar -xzf yq.tgz --strip-components=1; \
+  go build -trimpath -ldflags="-s -w" -o /usr/local/bin/yq .
+
+
 
 # 0.5 Pull in Apache PHP 8.3 
 FROM php:8.3-apache
@@ -87,9 +98,8 @@ RUN set -eux; \
 # 4. Add Working Directory
 WORKDIR /var/www/html
 
-# 6. yq for YAML parsing
-RUN curl -fsSL https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64 \
-     -o /usr/local/bin/yq && chmod +x /usr/local/bin/yq
+# 6. yq for YAML parsing (rebuilt with Go 1.24.2)
+COPY --from=yq-builder /usr/local/bin/yq /usr/local/bin/yq
 
 # 7. Install Extensions
 COPY docker/scripts/extensions-fetch.sh /usr/local/bin/extensions-fetch
