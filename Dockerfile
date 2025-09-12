@@ -32,11 +32,28 @@ RUN set -eux; \
   cmake --build /tmp/build -j"$(nproc)"; \
   DESTDIR=/tmp/pkgroot cmake --install /tmp/build --prefix /usr; \
   install -d /tmp/pkgroot/DEBIAN; \
-  printf "Package: libcjson1\nVersion: %s-0~custom1\nSection: libs\nPriority: optional\nArchitecture: arm64\nDepends: libc6 (>= 2.17)\nMaintainer: you <you@example.com>\nDescription: Ultralightweight JSON parser in ANSI C (custom build)\n" "$CJSON_VER" > /tmp/pkgroot/DEBIAN/control; \
+  printf "Package: libcjson1\nVersion: %s-0~custom1\nSection: libs\nPriority: optional\nArchitecture: arm64\nDepends: libc6 (>= 2.17)\nMaintainer: KB <kimberly.brewer.11.ctr@spaceforce.mil>\nDescription: Ultralightweight JSON parser in ANSI C (custom build)\n" "$CJSON_VER" > /tmp/pkgroot/DEBIAN/control; \
   dpkg-deb --build /tmp/pkgroot /tmp/libcjson1_${CJSON_VER}-0~custom1_arm64.deb
 
+# 0.45 Build FFmpeg 8.0 (includes fix for CVE-2025-1594)
+# Ref: FFmpeg security page lists CVE-2025-1594 fixed (ticket/11418, commit f98f142) and 8.0 is current stable.
+FROM debian:trixie AS ffmpeg-builder
+ARG FFMPEG_VER=8.0
+RUN set -eux; \
+  apt-get update; \
+  apt-get install -y --no-install-recommends \
+    ca-certificates curl build-essential pkg-config yasm nasm zlib1g-dev libssl-dev; \
+  curl -fsSL -o /tmp/ffmpeg.tar.xz "https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VER}.tar.xz"; \
+  mkdir -p /tmp/src && tar -xf /tmp/ffmpeg.tar.xz -C /tmp/src --strip-components=1; \
+  cd /tmp/src; \
+  ./configure --prefix=/usr/local --disable-debug --disable-doc --enable-pic; \
+  make -j"$(nproc)"; \
+  make install; \
+  strip /usr/local/bin/ffmpeg /usr/local/bin/ffprobe
+
+
 # 0.4 Build yq v4.44.3 with patched Go (fixes CVE-2025-22871 exposure)
-FROM golang:1.24.2-bookworm AS yq-builder
+FROM golang:1.24.6-bookworm AS yq-builder
 ARG YQ_VERSION=v4.44.3
 WORKDIR /src
 RUN set -eux; \
@@ -98,7 +115,7 @@ RUN set -eux; \
 # 4. Add Working Directory
 WORKDIR /var/www/html
 
-# 6. yq for YAML parsing (rebuilt with Go 1.24.2)
+# 6. yq for YAML parsing (rebuilt with Go 1.24.6)
 COPY --from=yq-builder /usr/local/bin/yq /usr/local/bin/yq
 
 # 7. Install Extensions
@@ -130,23 +147,27 @@ RUN set -eux; \
       liblua5.1-0-dev \
       pkg-config \
       ghostscript \
-      ffmpeg \
       mariadb-client \
       curl \
-      python3 python3-pygments \
       ca-certificates \
       unzip \
       gnupg \
     ; \
     rm -rf /var/lib/apt/lists/*
 
-# 9.3 Apply CVE-2025-8194 tarfile mitigation (autoload via sitecustomize)
+# 9.2 Remove unused audio libs to drop CVEs (libsndfile + pulseaudio client)
 RUN set -eux; \
-    install -d /usr/lib/python3/dist-packages; \
-    curl -fsSL "https://gist.github.com/sethmlarson/1716ac5b82b73dbcbf23ad2eff8b33e1/raw" \
-      -o /usr/lib/python3/dist-packages/sitecustomize.py; \
-    python3 -c 'import sitecustomize; print("SITECUSTOMIZE_LOADED", sitecustomize.__file__)'
+  apt-get update; \
+  DEBIAN_FRONTEND=noninteractive apt-get purge -y libpulse0 libsndfile1 || true; \
+  apt-get autoremove -y; \
+  rm -rf /var/lib/apt/lists/*
 
+# 9.3 Remove Python runtime (eliminate CVE-2025-8194 package flags)
+RUN set -eux; \
+  apt-get update; \
+  DEBIAN_FRONTEND=noninteractive apt-get purge -y python3-pygments python3.13 python3.13-minimal libpython3.13-stdlib libpython3.13-minimal python3 || true; \
+  apt-get autoremove -y; \
+  rm -rf /var/lib/apt/lists/*
 
 # 9.4 Remove doc/help entries that can trigger Cygwin signatures
 RUN set -eux; \
@@ -168,6 +189,11 @@ RUN set -eux; \
 # 9.5 Install ImageMagick from builder stage (#0)
 COPY --from=im-builder /usr/local /usr/local
 RUN ldconfig && magick -version | head -n1 | grep -q "ImageMagick 7.1.2-2"
+
+# 9.7 Install FFmpeg from builder stage and verify
+COPY --from=ffmpeg-builder /usr/local /usr/local
+RUN ldconfig && ffmpeg -version | head -n1 | grep -q "^ffmpeg version 8.0"
+
 
 
 # 10. Run PHP Extensions
