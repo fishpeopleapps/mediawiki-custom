@@ -7,6 +7,16 @@ The image is designed to run on the Gravity Platform using the **External Image 
 
 ---
 
+## Overview
+Custom MediaWiki container image built for deployment on the Gravity Platform.  
+This repository supports the **External Image Pipeline** process, allowing the image to be scanned and pushed into Harbor for internal use.  
+
+- **Source Registry:** ghcr.io  
+- **MediaWiki Version:** 1.43.4 (REL1_43)  
+- **Base Image:** PHP 8.3 + Apache 
+
+---
+
 ## Purpose
 - Provide a stable, secure MediaWiki image for our platform.  
 - Maintain explicit control over included extensions, configuration, and dependencies.  
