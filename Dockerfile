@@ -295,6 +295,38 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=5 CMD curl -fsS http://localho
 # 15. PHP overrides 
 COPY docker/php/php-overrides.ini /usr/local/etc/php/conf.d/99-overrides.ini
 
+# 15.5 Add sid for curl/libcurl only, then install & hold 8.16.0
+# 2398, 0725, 9086
+RUN set -eux; \
+  printf 'deb http://deb.debian.org/debian sid main\n' > /etc/apt/sources.list.d/sid.list; \
+  cat > /etc/apt/preferences.d/999-curl <<'PREF'
+Package: curl libcurl4t64 libcurl4 libcurl3t64-gnutls libcurl3-gnutls
+Pin: release a=sid
+Pin-Priority: 1001
+PREF
+RUN set -eux; \
+  apt-get update; \
+  apt-get install -y -t sid --no-install-recommends curl libcurl4t64; \
+  apt-mark hold curl libcurl4t64; \
+  rm -rf /var/lib/apt/lists/*
+
+# 15.8 – CVE-2025-9086: upgrade curl/libcurl to 8.16.0 (sid)
+RUN set -eux; \
+  printf 'deb http://deb.debian.org/debian sid main\n' > /etc/apt/sources.list.d/sid.list; \
+  cat > /etc/apt/preferences.d/999-curl <<'PREF'
+Package: curl libcurl4t64 libcurl3t64-gnutls libcurl4 libcurl3-gnutls
+Pin: release a=sid
+Pin-Priority: 1001
+PREF
+RUN set -eux; \
+  apt-get update; \
+  # Prefer libcurl4t64; if that package name isn’t present, fall back to the -gnutls variant
+  apt-get install -y -t sid --no-install-recommends curl libcurl4t64 \
+  || apt-get install -y -t sid --no-install-recommends curl libcurl3t64-gnutls; \
+  apt-mark hold curl libcurl4t64 libcurl3t64-gnutls; \
+  rm -rf /var/lib/apt/lists/*
+
+
 # 16. Wire curl/libcurl 8.16.0 runtime (fixes CVE-2025-9086) and build PHP extension
 COPY --from=curl-builder /opt/curl/ /opt/curl/
 RUN set -eux; \
