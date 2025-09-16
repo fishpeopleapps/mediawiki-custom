@@ -341,7 +341,6 @@ RUN set -eux; \
   rm -rf /var/lib/apt/lists/*
 
 
-
 # 17 Ensure apache2 is on PATH for apache2-foreground to prevent cycling cont, (fix CVE-2025-9086)
 RUN set -eux; \
   if ! command -v apache2 >/dev/null 2>&1; then \
