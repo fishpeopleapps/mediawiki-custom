@@ -51,6 +51,32 @@ RUN set -eux; \
   make install; \
   strip /usr/local/bin/ffmpeg /usr/local/bin/ffprobe
 
+# 0.50 Build curl/libcurl (fix CVE-2025-9086)
+FROM debian:bookworm-slim AS curl-builder
+ARG CURL_VER=8.16.0
+RUN set -eux; \
+  apt-get update; \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    ca-certificates build-essential pkg-config xz-utils curl \
+    libssl-dev zlib1g-dev libzstd-dev libbrotli-dev libnghttp2-dev \
+    libidn2-0-dev libpsl-dev; \
+  rm -rf /var/lib/apt/lists/*; \
+  curl -fsSL -o /tmp/curl.tar.xz "https://curl.se/download/curl-${CURL_VER}.tar.xz"; \
+  tar -C /tmp -xf /tmp/curl.tar.xz; \
+  cd /tmp/curl-${CURL_VER}; \
+  ./configure \
+    --prefix=/opt/curl \
+    --with-openssl \
+    --with-zlib \
+    --with-brotli \
+    --with-zstd \
+    --with-nghttp2 \
+    --enable-threaded-resolver; \
+  make -j"$(nproc)"; \
+  make install; \
+  strip --strip-unneeded /opt/curl/bin/curl || true; \
+  strip --strip-unneeded /opt/curl/lib/libcurl.so.* || true; \
+  ls -l /opt/curl/lib/libcurl.so* /opt/curl/include/curl
 
 # 0.4 Build yq v4.44.3 with patched Go (fixes CVE-2025-22871 exposure)
 FROM golang:1.24.6-bookworm AS yq-builder
@@ -155,6 +181,17 @@ RUN set -eux; \
     ; \
     rm -rf /var/lib/apt/lists/*
 
+# 9.1 Ensure apache2 present and protected from autoremove (fix CVE-2025-9086)
+RUN set -eux; \
+  apt-get update; \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apache2-bin; \
+  apt-mark manual apache2-bin; \
+  ln -sf /usr/sbin/apache2 /usr/local/bin/apache2; \
+  rm -rf /var/lib/apt/lists/*
+
+# 9.15 Pin base Apache packages so autoremove won't delete them (fix CVE-2025-9086)
+RUN set -eux; apt-mark manual apache2 apache2-bin apache2-data apache2-utils
+
 # 9.2 Remove unused audio libs to drop CVEs (libsndfile + pulseaudio client)
 RUN set -eux; \
   apt-get update; \
@@ -241,6 +278,7 @@ RUN a2enmod rewrite headers expires && \
 RUN printf "<Directory /var/www/html>\nAllowOverride All\n</Directory>\n" \
       > /etc/apache2/conf-available/override.conf && a2enconf override
 
+
 # 12. Writable dirs for file cache/uploads
 RUN set -eux; \
     install -o www-data -g www-data -d \
@@ -250,7 +288,6 @@ RUN set -eux; \
 # 13. Note Install path for Vendor files!
 ENV MW_COMPOSER_VENDOR_DIR=/var/www/html/vendor
 
-
 # 14. Expose the port & provide healthcheck
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=5s --retries=5 CMD curl -fsS http://localhost/ || exit 1
@@ -258,14 +295,33 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=5 CMD curl -fsS http://localho
 # 15. PHP overrides 
 COPY docker/php/php-overrides.ini /usr/local/etc/php/conf.d/99-overrides.ini
 
-# 16. Updates to pass Grype-Scan
+# 16. Wire curl/libcurl 8.16.0 runtime (fixes CVE-2025-9086) and build PHP extension
+COPY --from=curl-builder /opt/curl/ /opt/curl/
+RUN set -eux; \
+  apt-get update; \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    libnghttp2-14 libidn2-0 libpsl5 libbrotli1 libzstd1 libssl3; \
+  printf "/opt/curl/lib\n" > /etc/ld.so.conf.d/opt-curl.conf; \
+  ldconfig; \
+  ln -sf /opt/curl/bin/curl /usr/local/bin/curl; \
+  apt-get purge -y curl || true; \ 
+  rm -rf /var/lib/apt/lists/*; \
+  CURL_CFLAGS="-I/opt/curl/include" CURL_LIBS="-L/opt/curl/lib -lcurl" docker-php-ext-configure curl --with-curl=/opt/curl; \
+  docker-php-ext-install -j"$(nproc)" curl
 
+# 17 Ensure apache2 is on PATH for apache2-foreground to prevent cycling cont, (fix CVE-2025-9086)
+RUN set -eux; \
+  if ! command -v apache2 >/dev/null 2>&1; then \
+    apt-get update; \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apache2-bin; \
+    rm -rf /var/lib/apt/lists/*; \
+  fi; \
+  ln -sf /usr/sbin/apache2 /usr/local/bin/apache2; \
+  command -v apache2
 
-
-
-
-
-
-
- 
+# 18. Pin Apache so cleanup won't remove it again (only if installed) (fix CVE-2025-9086)
+RUN set -eux; \
+  for p in apache2 apache2-bin apache2-data apache2-utils; do \
+    if dpkg -s "$p" >/dev/null 2>&1; then apt-mark manual "$p"; fi; \
+  done
 
