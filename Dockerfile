@@ -326,20 +326,21 @@ RUN set -eux; \
   apt-mark hold curl libcurl4t64 libcurl3t64-gnutls; \
   rm -rf /var/lib/apt/lists/*
 
-
-# 16. Wire curl/libcurl 8.16.0 runtime (fixes CVE-2025-9086) and build PHP extension
-COPY --from=curl-builder /opt/curl/ /opt/curl/
+# 16 – Use system libcurl 8.16.0; remove old /opt/curl and rebuild php-curl
+# CVE-2025-9086
 RUN set -eux; \
+  # remove any prior custom curl artifacts
+  rm -f /etc/ld.so.conf.d/opt-curl.conf || true; \
+  rm -rf /opt/curl || true; \
+  rm -f /usr/local/bin/curl || true; \
+  # headers to compile php-curl against the system libcurl from sid (8.16.0)
   apt-get update; \
-  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    libnghttp2-14 libidn2-0 libpsl5 libbrotli1 libzstd1 libssl3; \
-  printf "/opt/curl/lib\n" > /etc/ld.so.conf.d/opt-curl.conf; \
-  ldconfig; \
-  ln -sf /opt/curl/bin/curl /usr/local/bin/curl; \
-  apt-get purge -y curl || true; \ 
+  apt-get install -y -t sid --no-install-recommends libcurl4-openssl-dev; \
   rm -rf /var/lib/apt/lists/*; \
-  CURL_CFLAGS="-I/opt/curl/include" CURL_LIBS="-L/opt/curl/lib -lcurl" docker-php-ext-configure curl --with-curl=/opt/curl; \
+  # build the PHP cURL extension against system libcurl
+  docker-php-ext-configure curl; \
   docker-php-ext-install -j"$(nproc)" curl
+
 
 # 17 Ensure apache2 is on PATH for apache2-foreground to prevent cycling cont, (fix CVE-2025-9086)
 RUN set -eux; \
