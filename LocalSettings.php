@@ -205,6 +205,7 @@ wfLoadExtension( 'TemplateStyles' );
 wfLoadExtension( 'TemplateWizard' );
 wfLoadExtension( 'TimedMediaHandler' );
 wfLoadExtension( 'UploadWizard' );
+wfLoadExtension( 'UserMerge');
 wfLoadExtension( 'VECancelButton' );
 wfLoadExtension( 'Variables' );
 wfLoadExtension( 'VEForAll' );
