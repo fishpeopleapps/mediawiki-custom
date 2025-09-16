@@ -326,20 +326,20 @@ RUN set -eux; \
   apt-mark hold curl libcurl4t64 libcurl3t64-gnutls; \
   rm -rf /var/lib/apt/lists/*
 
-# 16 – Use system libcurl 8.16.0; remove old /opt/curl and rebuild php-curl
+# 16 – Rebuild php-curl against system libcurl 8.16.0 and remove build deps
 # CVE-2025-9086
 RUN set -eux; \
-  # remove any prior custom curl artifacts
   rm -f /etc/ld.so.conf.d/opt-curl.conf || true; \
   rm -rf /opt/curl || true; \
   rm -f /usr/local/bin/curl || true; \
-  # headers to compile php-curl against the system libcurl from sid (8.16.0)
   apt-get update; \
   apt-get install -y -t sid --no-install-recommends libcurl4-openssl-dev; \
-  rm -rf /var/lib/apt/lists/*; \
-  # build the PHP cURL extension against system libcurl
   docker-php-ext-configure curl; \
-  docker-php-ext-install -j"$(nproc)" curl
+  docker-php-ext-install -j"$(nproc)" curl; \
+  apt-get purge -y libcurl4-openssl-dev; \
+  apt-get autoremove -y; \
+  rm -rf /var/lib/apt/lists/*
+
 
 
 # 17 Ensure apache2 is on PATH for apache2-foreground to prevent cycling cont, (fix CVE-2025-9086)
