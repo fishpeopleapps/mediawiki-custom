@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 # 0. Build ImageMagick 7.1.2-2 from source
-FROM php:8.3-apache AS im-builder
+FROM --platform=linux/amd64 php:8.3-apache AS im-builder
 ARG IM_VERSION=7.1.2-2
 RUN set -eux; \
   apt-get update; \
@@ -18,7 +18,7 @@ RUN set -eux; \
   ldconfig
 
 # 0.3 
-FROM debian:trixie AS cjson-builder
+FROM --platform=linux/amd64 debian:trixie AS cjson-builder
 ARG CJSON_VER=1.7.19
 RUN set -eux; \
   apt-get update; \
@@ -28,16 +28,16 @@ RUN set -eux; \
   cmake -S /tmp/src -B /tmp/build \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_INSTALL_LIBDIR=lib/aarch64-linux-gnu; \
+    -DCMAKE_INSTALL_LIBDIR=lib/x86_64-linux-gnu; \
   cmake --build /tmp/build -j"$(nproc)"; \
   DESTDIR=/tmp/pkgroot cmake --install /tmp/build --prefix /usr; \
   install -d /tmp/pkgroot/DEBIAN; \
-  printf "Package: libcjson1\nVersion: %s-0~custom1\nSection: libs\nPriority: optional\nArchitecture: arm64\nDepends: libc6 (>= 2.17)\nMaintainer: KB <kimberly.brewer.11.ctr@spaceforce.mil>\nDescription: Ultralightweight JSON parser in ANSI C (custom build)\n" "$CJSON_VER" > /tmp/pkgroot/DEBIAN/control; \
-  dpkg-deb --build /tmp/pkgroot /tmp/libcjson1_${CJSON_VER}-0~custom1_arm64.deb
+  printf "Package: libcjson1\nVersion: %s-0~custom1\nSection: libs\nPriority: optional\nArchitecture: amd64\nDepends: libc6 (>= 2.17)\nMaintainer: KB <kimberly.brewer.11.ctr@spaceforce.mil>\nDescription: Ultralightweight JSON parser in ANSI C (custom build)\n" "$CJSON_VER" > /tmp/pkgroot/DEBIAN/control; \
+  dpkg-deb --build /tmp/pkgroot /tmp/libcjson1_${CJSON_VER}-0~custom1_amd64.deb; \
+  rm -rf /var/lib/apt/lists/*
 
 # 0.45 Build FFmpeg 8.0 (includes fix for CVE-2025-1594)
-# Ref: FFmpeg security page lists CVE-2025-1594 fixed (ticket/11418, commit f98f142) and 8.0 is current stable.
-FROM debian:trixie AS ffmpeg-builder
+FROM --platform=linux/amd64 debian:trixie AS ffmpeg-builder
 ARG FFMPEG_VER=8.0
 RUN set -eux; \
   apt-get update; \
@@ -49,10 +49,11 @@ RUN set -eux; \
   ./configure --prefix=/usr/local --disable-debug --disable-doc --enable-pic; \
   make -j"$(nproc)"; \
   make install; \
-  strip /usr/local/bin/ffmpeg /usr/local/bin/ffprobe
+  strip /usr/local/bin/ffmpeg /usr/local/bin/ffprobe; \
+  rm -rf /var/lib/apt/lists/*
 
 # 0.50 Build curl/libcurl (fix CVE-2025-9086)
-FROM debian:bookworm-slim AS curl-builder
+FROM --platform=linux/amd64 debian:bookworm-slim AS curl-builder
 ARG CURL_VER=8.16.0
 RUN set -eux; \
   apt-get update; \
@@ -78,8 +79,8 @@ RUN set -eux; \
   strip --strip-unneeded /opt/curl/lib/libcurl.so.* || true; \
   ls -l /opt/curl/lib/libcurl.so* /opt/curl/include/curl
 
-# 0.4 Build yq v4.44.3 with patched Go (fixes CVE-2025-22871 exposure)
-FROM golang:1.24.6-bookworm AS yq-builder
+# 0.6 Build yq v4.44.3 with patched Go (fixes CVE-2025-22871 exposure)
+FROM --platform=linux/amd64 golang:1.24.6-bookworm AS yq-builder
 ARG YQ_VERSION=v4.44.3
 WORKDIR /src
 RUN set -eux; \
@@ -88,10 +89,8 @@ RUN set -eux; \
   tar -xzf yq.tgz --strip-components=1; \
   go build -trimpath -ldflags="-s -w" -o /usr/local/bin/yq .
 
-
-
-# 0.5 Pull in Apache PHP 8.3 
-FROM php:8.3-apache
+# 0.7 Pull in Apache PHP 8.3 
+FROM --platform=linux/amd64 php:8.3-apache
 
 # 1. --- Build args ---
 ARG MEDIAWIKI_VERSION=1.43.3
@@ -214,7 +213,7 @@ RUN set -eux; \
   find /usr/share/terminfo -type f -iname 'cygwin*' -delete || true
 
 # 9.45 Upgrade libcjson1 to 1.7.19 (fix CVE-2025-57052)
-COPY --from=cjson-builder /tmp/libcjson1_1.7.19-0~custom1_arm64.deb /tmp/libcjson1.deb
+COPY --from=cjson-builder /tmp/libcjson1_1.7.19-0~custom1_amd64.deb /tmp/libcjson1.deb
 RUN set -eux; \
     dpkg -i /tmp/libcjson1.deb; \
     ldconfig; \
@@ -339,7 +338,6 @@ RUN set -eux; \
   apt-get purge -y libcurl4-openssl-dev; \
   apt-get autoremove -y; \
   rm -rf /var/lib/apt/lists/*
-
 
 
 # 17 Ensure apache2 is on PATH for apache2-foreground to prevent cycling cont, (fix CVE-2025-9086)
