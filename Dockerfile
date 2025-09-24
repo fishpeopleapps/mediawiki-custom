@@ -22,7 +22,7 @@ FROM --platform=linux/amd64 debian:trixie AS cjson-builder
 ARG CJSON_VER=1.7.19
 RUN set -eux; \
   apt-get update; \
-  apt-get install -y --no-install-recommends ca-certificates curl build-essential cmake pkg-config; \
+  apt-get install -y --no-install-recommends ca-certificates curl build-essential cmake pkg-config && rm -rf /var/lib/apt/lists/*; \
   curl -fsSL -o /tmp/cjson.tgz https://github.com/DaveGamble/cJSON/archive/refs/tags/v${CJSON_VER}.tar.gz; \
   mkdir -p /tmp/src && tar -xzf /tmp/cjson.tgz -C /tmp/src --strip-components=1; \
   cmake -S /tmp/src -B /tmp/build \
@@ -33,8 +33,7 @@ RUN set -eux; \
   DESTDIR=/tmp/pkgroot cmake --install /tmp/build --prefix /usr; \
   install -d /tmp/pkgroot/DEBIAN; \
   printf "Package: libcjson1\nVersion: %s-0~custom1\nSection: libs\nPriority: optional\nArchitecture: amd64\nDepends: libc6 (>= 2.17)\nMaintainer: KB <kimberly.brewer.11.ctr@spaceforce.mil>\nDescription: Ultralightweight JSON parser in ANSI C (custom build)\n" "$CJSON_VER" > /tmp/pkgroot/DEBIAN/control; \
-  dpkg-deb --build /tmp/pkgroot /tmp/libcjson1_${CJSON_VER}-0~custom1_amd64.deb; \
-  rm -rf /var/lib/apt/lists/*
+  dpkg-deb --build /tmp/pkgroot /tmp/libcjson1_${CJSON_VER}-0~custom1_amd64.deb
 
 # 0.45 Build FFmpeg 8.0 (includes fix for CVE-2025-1594)
 FROM --platform=linux/amd64 debian:trixie AS ffmpeg-builder
@@ -42,15 +41,14 @@ ARG FFMPEG_VER=8.0
 RUN set -eux; \
   apt-get update; \
   apt-get install -y --no-install-recommends \
-    ca-certificates curl build-essential pkg-config yasm nasm zlib1g-dev libssl-dev; \
+    ca-certificates curl build-essential pkg-config yasm nasm zlib1g-dev libssl-dev && rm -rf /var/lib/apt/lists/*; \
   curl -fsSL -o /tmp/ffmpeg.tar.xz "https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VER}.tar.xz"; \
   mkdir -p /tmp/src && tar -xf /tmp/ffmpeg.tar.xz -C /tmp/src --strip-components=1; \
   cd /tmp/src; \
   ./configure --prefix=/usr/local --disable-debug --disable-doc --enable-pic; \
   make -j"$(nproc)"; \
   make install; \
-  strip /usr/local/bin/ffmpeg /usr/local/bin/ffprobe; \
-  rm -rf /var/lib/apt/lists/*
+  strip /usr/local/bin/ffmpeg /usr/local/bin/ffprobe
 
 # 0.50 Build curl/libcurl (fix CVE-2025-9086)
 FROM --platform=linux/amd64 debian:bookworm-slim AS curl-builder
@@ -106,8 +104,7 @@ RUN set -eux; \
     chown -R www-data:www-data "${APACHE_DOCUMENT_ROOT}" && \
     chown -R www-data:www-data "${APACHE_DOCUMENT_ROOT}/vendor"
 
-
-# 2.5. Bundle MediaWiki vendor deps (match 1.43.x with REL1_43)
+# 2.5. Bundle MediaWiki vendor deps
 ARG MEDIAWIKI_VENDOR_BRANCH=REL1_43
 RUN set -eux; \
     curl -fsSL "https://codeload.github.com/wikimedia/mediawiki-vendor/tar.gz/refs/heads/${MEDIAWIKI_VENDOR_BRANCH}" -o /tmp/vendor.tgz && \
@@ -124,17 +121,12 @@ RUN set -eux; \
 RUN set -eux; \
   rm -rf /var/www/html/vendor/james-heinrich/getid3/helperapps
 
-
 # 3. Run Tools
 RUN set -eux; \
   rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* || true; \
   echo 'APT::Keep-Downloaded-Packages "false";' > /etc/apt/apt.conf.d/keep-cache; \
   apt-get update; \
-  apt-get install -y --no-install-recommends \
-      git ca-certificates \
-  ; \
-  apt-get clean; \
-  rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* /var/tmp/* && \
+  apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* /var/tmp/* && \
   git config --global --add safe.directory /var/www/html || true
 
 # 4. Add Working Directory
@@ -183,10 +175,9 @@ RUN set -eux; \
 # 9.1 Ensure apache2 present and protected from autoremove (fix CVE-2025-9086)
 RUN set -eux; \
   apt-get update; \
-  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apache2-bin; \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apache2-bin && rm -rf /var/lib/apt/lists/*; \
   apt-mark manual apache2-bin; \
-  ln -sf /usr/sbin/apache2 /usr/local/bin/apache2; \
-  rm -rf /var/lib/apt/lists/*
+  ln -sf /usr/sbin/apache2 /usr/local/bin/apache2
 
 # 9.15 Pin base Apache packages so autoremove won't delete them (fix CVE-2025-9086)
 RUN set -eux; apt-mark manual apache2 apache2-bin apache2-data apache2-utils
@@ -221,7 +212,6 @@ RUN set -eux; \
     dpkg -s libcjson1 | grep -q '^Version: 1.7.19-0~custom1'; \
     rm -f /tmp/libcjson1.deb
 
-
 # 9.5 Install ImageMagick from builder stage (#0)
 COPY --from=im-builder /usr/local /usr/local
 RUN ldconfig && magick -version | head -n1 | grep -q "ImageMagick 7.1.2-2"
@@ -229,8 +219,6 @@ RUN ldconfig && magick -version | head -n1 | grep -q "ImageMagick 7.1.2-2"
 # 9.7 Install FFmpeg from builder stage and verify
 COPY --from=ffmpeg-builder /usr/local /usr/local
 RUN ldconfig && ffmpeg -version | head -n1 | grep -q "^ffmpeg version 8.0"
-
-
 
 # 10. Run PHP Extensions
 RUN set -eux; \
@@ -294,8 +282,7 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=5 CMD curl -fsS http://localho
 # 15. PHP overrides 
 COPY docker/php/php-overrides.ini /usr/local/etc/php/conf.d/99-overrides.ini
 
-# 15.5 Add sid for curl/libcurl only, then install & hold 8.16.0
-# 2398, 0725, 9086
+# 15.5 Add sid for curl/libcurl only, then install & hold 8.16.0 - CVE 2398, 0725, 9086
 RUN set -eux; \
   printf 'deb http://deb.debian.org/debian sid main\n' > /etc/apt/sources.list.d/sid.list; \
   cat > /etc/apt/preferences.d/999-curl <<'PREF'
@@ -305,9 +292,8 @@ Pin-Priority: 1001
 PREF
 RUN set -eux; \
   apt-get update; \
-  apt-get install -y -t sid --no-install-recommends curl libcurl4t64; \
-  apt-mark hold curl libcurl4t64; \
-  rm -rf /var/lib/apt/lists/*
+  apt-get install -y -t sid --no-install-recommends curl libcurl4t64 && rm -rf /var/lib/apt/lists/*; \
+  apt-mark hold curl libcurl4t64
 
 # 15.8 – CVE-2025-9086: upgrade curl/libcurl to 8.16.0 (sid)
 RUN set -eux; \
@@ -321,31 +307,26 @@ RUN set -eux; \
   apt-get update; \
   # Prefer libcurl4t64; if that package name isn’t present, fall back to the -gnutls variant
   apt-get install -y -t sid --no-install-recommends curl libcurl4t64 \
-  || apt-get install -y -t sid --no-install-recommends curl libcurl3t64-gnutls; \
-  apt-mark hold curl libcurl4t64 libcurl3t64-gnutls; \
-  rm -rf /var/lib/apt/lists/*
+  || apt-get install -y -t sid --no-install-recommends curl libcurl3t64-gnutls && rm -rf /var/lib/apt/lists/*; \
+  apt-mark hold curl libcurl4t64 libcurl3t64-gnutls
 
-# 16 – Rebuild php-curl against system libcurl 8.16.0 and remove build deps
-# CVE-2025-9086
+# 16 – Rebuild php-curl against system libcurl 8.16.0 and remove build deps - CVE-2025-9086
 RUN set -eux; \
   rm -f /etc/ld.so.conf.d/opt-curl.conf || true; \
   rm -rf /opt/curl || true; \
   rm -f /usr/local/bin/curl || true; \
   apt-get update; \
-  apt-get install -y -t sid --no-install-recommends libcurl4-openssl-dev; \
+  apt-get install -y -t sid --no-install-recommends libcurl4-openssl-dev && rm -rf /var/lib/apt/lists/*; \
   docker-php-ext-configure curl; \
   docker-php-ext-install -j"$(nproc)" curl; \
   apt-get purge -y libcurl4-openssl-dev; \
-  apt-get autoremove -y; \
-  rm -rf /var/lib/apt/lists/*
-
+  apt-get autoremove -y
 
 # 17 Ensure apache2 is on PATH for apache2-foreground to prevent cycling cont, (fix CVE-2025-9086)
 RUN set -eux; \
   if ! command -v apache2 >/dev/null 2>&1; then \
     apt-get update; \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apache2-bin; \
-    rm -rf /var/lib/apt/lists/*; \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apache2-bin && rm -rf /var/lib/apt/lists/*; \
   fi; \
   ln -sf /usr/sbin/apache2 /usr/local/bin/apache2; \
   command -v apache2
