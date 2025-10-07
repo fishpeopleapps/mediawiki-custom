@@ -88,7 +88,7 @@ RUN set -eux; \
   go build -trimpath -ldflags="-s -w" -o /usr/local/bin/yq .
 
 # 0.7 Pull in Apache PHP 8.3 
-FROM --platform=linux/amd64 php:8.3-apache
+FROM --platform=linux/amd64 php:8.3-apache-trixie
 
 # 1. --- Build args ---
 ARG MEDIAWIKI_VERSION=1.43.3
@@ -171,6 +171,20 @@ RUN set -eux; \
       gnupg \
     ; \
     rm -rf /var/lib/apt/lists/*
+
+# 9.05 (fixes CVE-2024-2398, 2025-0725, 2025-59375, 2025-9900, 2025-9086)
+RUN echo 'deb http://deb.debian.org/debian sid main' > /etc/apt/sources.list.d/sid.list && \
+    printf 'Package: *\nPin: release a=sid\nPin-Priority: 1001\n' > /etc/apt/preferences.d/99sid && \
+    apt-get update && apt-get install -y --no-install-recommends --only-upgrade \
+      curl \
+      libcurl4t64 \
+      libcurl3t64-gnutls \
+      libexpat1 \
+      libtiff6 && \
+    rm -rf /etc/apt/sources.list.d/sid.list /etc/apt/preferences.d/99sid /var/lib/apt/lists/*
+
+# 9.06 Remove libtiff (CVE-2025-9909)
+RUN apt-get purge -y libtiff6 && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
 # 9.1 Ensure apache2 present and protected from autoremove (fix CVE-2025-9086)
 RUN set -eux; \
