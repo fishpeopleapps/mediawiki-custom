@@ -1,10 +1,15 @@
-{
-  "require": {
-    "james-heinrich/getid3": "^1.9",
-    "mediawiki/semantic-approved-revs": "0.10.x-dev",
-    "mediawiki/semantic-media-wiki": "6.0.1",
-    "mediawiki/semantic-result-formats": "5.0",
-    "mediawiki/simple-batch-upload": "3.0.0",
-    "mediawiki/scss": "4.0.0"
+  {
+    "require": {
+        "php": "^8.3",
+        "firebase/php-jwt": "^6.9",
+        "james-heinrich/getid3": "^1.9",
+        "mediawiki/semantic-approved-revs": "0.10.x-dev",
+        "mediawiki/semantic-media-wiki": "6.0.1",
+        "mediawiki/semantic-result-formats": "5.0",
+        "mediawiki/simple-batch-upload": "3.0.0",
+        "mediawiki/scss": "4.0.0",
+        "smarty/smarty": "^4.3",
+        "ruflin/elastica": "^7.0",
+        "wikimedia/css-sanitizer": "^5.1.0"
+    }
   }
-}
