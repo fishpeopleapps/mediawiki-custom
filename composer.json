@@ -3,12 +3,25 @@
   "description": "Custom MediaWiki image for Space Wiki",
   "type": "project",
   "license": "proprietary",
-  "require": {
-    "php": "^8.3"
-  },
   "config": {
     "optimize-autoloader": true,
-    "sort-packages": true
-  }
+    "sort-packages": true,
+    "allow-plugins": {
+      "composer/installers": true
+    }
+  },
+  "require": {
+    "wikimedia/composer-merge-plugin": "dev-master"
+  },
+  "extra": {
+    "merge-plugin": {
+        "include": [
+            "/tmp/composer-prod/composer.json",
+            "/tmp/composer-prod/composer.local.json"
+        ],
+        "recurse": true,
+        "replace": false,
+        "merge-extra": true
+    }
 }
-
+}

@@ -164,12 +164,14 @@ RUN set -eux; \
       liblua5.1-0-dev \
       pkg-config \
       ghostscript \
+      poppler-utils \
       mariadb-client \
       curl \
       ca-certificates \
       unzip \
       gnupg \
     ; \
+    apt-mark manual ghostscript poppler-utils; \
     rm -rf /var/lib/apt/lists/*
 
 # 9.05 (fixes CVE-2024-2398, 2025-0725, 2025-59375, 2025-9900, 2025-9086)
@@ -183,8 +185,15 @@ RUN echo 'deb http://deb.debian.org/debian sid main' > /etc/apt/sources.list.d/s
       libtiff6 && \
     rm -rf /etc/apt/sources.list.d/sid.list /etc/apt/preferences.d/99sid /var/lib/apt/lists/*
 
-# 9.06 Remove libtiff (CVE-2025-9909)
-RUN apt-get purge -y libtiff6 && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
+# 9.06 — upgrade libtiff safely rather than purge it(CVE-2025-9909)
+RUN set -eux; \
+    echo 'deb http://deb.debian.org/debian sid main' > /etc/apt/sources.list.d/sid.list; \
+    printf 'Package: *\nPin: release a=sid\nPin-Priority: 1001\n' > /etc/apt/preferences.d/99sid; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends -t sid libtiff6; \
+    apt-mark hold libtiff6; \
+    rm -rf /etc/apt/sources.list.d/sid.list /etc/apt/preferences.d/99sid /var/lib/apt/lists/*
+
 
 # 9.1 Ensure apache2 present and protected from autoremove (fix CVE-2025-9086)
 RUN set -eux; \
@@ -200,14 +209,12 @@ RUN set -eux; apt-mark manual apache2 apache2-bin apache2-data apache2-utils
 RUN set -eux; \
   apt-get update; \
   DEBIAN_FRONTEND=noninteractive apt-get purge -y libpulse0 libsndfile1 || true; \
-  apt-get autoremove -y; \
   rm -rf /var/lib/apt/lists/*
 
 # 9.3 Remove Python runtime (eliminate CVE-2025-8194 package flags)
 RUN set -eux; \
   apt-get update; \
   DEBIAN_FRONTEND=noninteractive apt-get purge -y python3-pygments python3.13 python3.13-minimal libpython3.13-stdlib libpython3.13-minimal python3 || true; \
-  apt-get autoremove -y; \
   rm -rf /var/lib/apt/lists/*
 
 # 9.4 Remove doc/help entries that can trigger Cygwin signatures
@@ -333,8 +340,7 @@ RUN set -eux; \
   apt-get install -y -t sid --no-install-recommends libcurl4-openssl-dev && rm -rf /var/lib/apt/lists/*; \
   docker-php-ext-configure curl; \
   docker-php-ext-install -j"$(nproc)" curl; \
-  apt-get purge -y libcurl4-openssl-dev; \
-  apt-get autoremove -y
+  rm -rf /var/lib/apt/lists/*
 
 # 17 Ensure apache2 is on PATH for apache2-foreground to prevent cycling cont, (fix CVE-2025-9086)
 RUN set -eux; \

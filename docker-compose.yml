@@ -15,7 +15,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        MEDIAWIKI_VERSION: "1.43.1"
+        MEDIAWIKI_VERSION: "1.43.4"
     image: space-wiki/mediawiki-php83:base
     depends_on: [db]
     ports:
