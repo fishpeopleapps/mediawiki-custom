@@ -35,20 +35,41 @@ RUN set -eux; \
   printf "Package: libcjson1\nVersion: %s-0~custom1\nSection: libs\nPriority: optional\nArchitecture: amd64\nDepends: libc6 (>= 2.17)\nMaintainer: KB <kimberly.brewer.11.ctr@spaceforce.mil>\nDescription: Ultralightweight JSON parser in ANSI C (custom build)\n" "$CJSON_VER" > /tmp/pkgroot/DEBIAN/control; \
   dpkg-deb --build /tmp/pkgroot /tmp/libcjson1_${CJSON_VER}-0~custom1_amd64.deb
 
-# 0.45 Build FFmpeg 8.0 (includes fix for CVE-2025-1594)
+# 0.45 Build FFmpeg 8.0 (includes fix for CVE-2025-1594 and codex for transcription)
 FROM --platform=linux/amd64 debian:trixie AS ffmpeg-builder
 ARG FFMPEG_VER=8.0
+
 RUN set -eux; \
   apt-get update; \
   apt-get install -y --no-install-recommends \
-    ca-certificates curl build-essential pkg-config yasm nasm zlib1g-dev libssl-dev && rm -rf /var/lib/apt/lists/*; \
+    ca-certificates curl build-essential pkg-config yasm nasm zlib1g-dev libssl-dev; \
+  apt-get install -y \
+    libx264-dev \
+    libx265-dev \
+    libvpx-dev \
+    libmp3lame-dev \
+    libopus-dev; \
+  rm -rf /var/lib/apt/lists/*; \
   curl -fsSL -o /tmp/ffmpeg.tar.xz "https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VER}.tar.xz"; \
   mkdir -p /tmp/src && tar -xf /tmp/ffmpeg.tar.xz -C /tmp/src --strip-components=1; \
   cd /tmp/src; \
-  ./configure --prefix=/usr/local --disable-debug --disable-doc --enable-pic; \
+  ./configure \
+    --prefix=/usr/local \
+    --disable-debug \
+    --disable-doc \
+    --enable-pic \
+    --enable-gpl \
+    --enable-nonfree \
+    --enable-libx264 \
+    --enable-libx265 \
+    --enable-libvpx \
+    --enable-libmp3lame \
+    --enable-libopus; \
   make -j"$(nproc)"; \
   make install; \
   strip /usr/local/bin/ffmpeg /usr/local/bin/ffprobe
+
+
 
 # 0.50 Build curl/libcurl (fix CVE-2025-9086)
 FROM --platform=linux/amd64 debian:bookworm-slim AS curl-builder
@@ -239,6 +260,12 @@ RUN ldconfig && magick -version | head -n1 | grep -q "ImageMagick 7.1.2-2"
 
 # 9.7 Install FFmpeg from builder stage and verify
 COPY --from=ffmpeg-builder /usr/local /usr/local
+COPY --from=ffmpeg-builder /usr/lib/x86_64-linux-gnu/libx264.so.* /usr/lib/x86_64-linux-gnu/
+COPY --from=ffmpeg-builder /usr/lib/x86_64-linux-gnu/libx265.so.* /usr/lib/x86_64-linux-gnu/
+COPY --from=ffmpeg-builder /usr/lib/x86_64-linux-gnu/libvpx.so.*  /usr/lib/x86_64-linux-gnu/
+COPY --from=ffmpeg-builder /usr/lib/x86_64-linux-gnu/libmp3lame.so.* /usr/lib/x86_64-linux-gnu/
+COPY --from=ffmpeg-builder /usr/lib/x86_64-linux-gnu/libopus.so.* /usr/lib/x86_64-linux-gnu/
+RUN apt-get update && apt-get install -y libnuma1 && rm -rf /var/lib/apt/lists/*
 RUN ldconfig && ffmpeg -version | head -n1 | grep -q "^ffmpeg version 8.0"
 
 # 10. Run PHP Extensions

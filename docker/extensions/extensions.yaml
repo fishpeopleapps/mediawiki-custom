@@ -79,9 +79,6 @@ extensions:
                 branch: REL1_43
 
       # --- Data / forms ---
-      - Cargo:
-                repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/Cargo
-                branch: REL1_43
       - CIForms:
                 repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/CIForms
                 branch: master
@@ -129,6 +126,14 @@ extensions:
       - JWTAuth:
                 repository: https://github.com/wikimedia/mediawiki-extensions-JWTAuth.git
                 branch: master
+
+      # --- Cust Ext ---
+      - SaneCrumbs:
+                repository: https://github.com/fishpeopleapps/SaneCrumbs.git
+                branch: main
+      - VideoPermission:
+                repository: https://github.com/fishpeopleapps/VideoPermission.git
+                branch: main
 
 skins:
       - Citizen:
