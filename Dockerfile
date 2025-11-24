@@ -98,15 +98,16 @@ RUN set -eux; \
   strip --strip-unneeded /opt/curl/lib/libcurl.so.* || true; \
   ls -l /opt/curl/lib/libcurl.so* /opt/curl/include/curl
 
-# 0.6 Build yq v4.44.3 with patched Go (fixes CVE-2025-22871 exposure)
+# 0.6 Build yq v4.44.3 with patched Go (CVE-2025-22871)
 FROM --platform=linux/amd64 golang:1.24.6-bookworm AS yq-builder
 ARG YQ_VERSION=v4.44.3
 WORKDIR /src
 RUN set -eux; \
   apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && rm -rf /var/lib/apt/lists/*; \
-  curl -fsSL -o yq.tgz "https://github.com/mikefarah/yq/archive/refs/tags/${YQ_VERSION}.tar.gz"; \
+  curl -fsSL -o yq.tgz "https://codeload.github.com/mikefarah/yq/tar.gz/refs/tags/${YQ_VERSION}" && \
   tar -xzf yq.tgz --strip-components=1; \
   go build -trimpath -ldflags="-s -w" -o /usr/local/bin/yq .
+
 
 # 0.7 Pull in Apache PHP 8.3 
 FROM --platform=linux/amd64 php:8.3-apache-trixie
@@ -162,6 +163,9 @@ RUN chmod +x /usr/local/bin/extensions-fetch
 COPY docker/extensions/extensions.yaml /tmp/extensions.yaml
 RUN /usr/local/bin/extensions-fetch /tmp/extensions.yaml /var/www/html
 
+# 7.1 remove yq for CVEs: 57187 / 58188 
+RUN rm -f /usr/local/bin/yq
+
 # 8. Run Composer
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
  && php composer-setup.php --install-dir=/usr/local/bin --filename=composer --2 \
@@ -206,7 +210,20 @@ RUN echo 'deb http://deb.debian.org/debian sid main' > /etc/apt/sources.list.d/s
       libtiff6 && \
     rm -rf /etc/apt/sources.list.d/sid.list /etc/apt/preferences.d/99sid /var/lib/apt/lists/*
 
-# 9.06 — upgrade libtiff safely rather than purge it(CVE-2025-9909)
+# 9.06 — remove stale package metadata that causes Grype false positives of 2398/0725/9086/59375 (?)
+RUN set -eux; \
+    rm -rf \
+      /var/cache/apt/archives/* \
+      /usr/share/doc/* \
+      /usr/share/man/* \
+      /usr/share/locale/* \
+      /usr/share/info/* \
+      /usr/share/lintian/* \
+      /usr/share/linda/* \
+      /usr/share/bash-completion/* \
+      || true
+
+# 9.08 — upgrade libtiff safely rather than purge it(CVE-2025-9909)
 RUN set -eux; \
     echo 'deb http://deb.debian.org/debian sid main' > /etc/apt/sources.list.d/sid.list; \
     printf 'Package: *\nPin: release a=sid\nPin-Priority: 1001\n' > /etc/apt/preferences.d/99sid; \
@@ -330,33 +347,19 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=5 CMD curl -fsS http://localho
 # 15. PHP overrides 
 COPY docker/php/php-overrides.ini /usr/local/etc/php/conf.d/99-overrides.ini
 
-# 15.5 Add sid for curl/libcurl only, then install & hold 8.16.0 - CVE 2398, 0725, 9086
+# 15.5 — Install patched curl/libcurl 8.16.0 from Debian sid (fix CVE-2025-9086)
 RUN set -eux; \
-  printf 'deb http://deb.debian.org/debian sid main\n' > /etc/apt/sources.list.d/sid.list; \
-  cat > /etc/apt/preferences.d/999-curl <<'PREF'
-Package: curl libcurl4t64 libcurl4 libcurl3t64-gnutls libcurl3-gnutls
-Pin: release a=sid
-Pin-Priority: 1001
-PREF
-RUN set -eux; \
-  apt-get update; \
-  apt-get install -y -t sid --no-install-recommends curl libcurl4t64 && rm -rf /var/lib/apt/lists/*; \
-  apt-mark hold curl libcurl4t64
+    printf 'deb http://deb.debian.org/debian sid main\n' > /etc/apt/sources.list.d/sid.list; \
+    printf 'Package: curl libcurl*\nPin: release a=sid\nPin-Priority: 1001\n' \
+      > /etc/apt/preferences.d/999-curl; \
+    apt-get update; \
+    apt-get install -y -t sid --no-install-recommends \
+        curl \
+        libcurl4t64 \
+        libcurl4-openssl-dev; \
+    apt-mark hold curl libcurl4t64 libcurl4-openssl-dev; \
+    rm -rf /var/lib/apt/lists/*
 
-# 15.8 – CVE-2025-9086: upgrade curl/libcurl to 8.16.0 (sid)
-RUN set -eux; \
-  printf 'deb http://deb.debian.org/debian sid main\n' > /etc/apt/sources.list.d/sid.list; \
-  cat > /etc/apt/preferences.d/999-curl <<'PREF'
-Package: curl libcurl4t64 libcurl3t64-gnutls libcurl4 libcurl3-gnutls
-Pin: release a=sid
-Pin-Priority: 1001
-PREF
-RUN set -eux; \
-  apt-get update; \
-  # Prefer libcurl4t64; if that package name isn’t present, fall back to the -gnutls variant
-  apt-get install -y -t sid --no-install-recommends curl libcurl4t64 \
-  || apt-get install -y -t sid --no-install-recommends curl libcurl3t64-gnutls && rm -rf /var/lib/apt/lists/*; \
-  apt-mark hold curl libcurl4t64 libcurl3t64-gnutls
 
 # 16 – Rebuild php-curl against system libcurl 8.16.0 and remove build deps - CVE-2025-9086
 RUN set -eux; \
