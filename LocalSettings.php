@@ -80,9 +80,27 @@ $wgMemCachedServers = [];
 
 ## To enable image uploads, make sure the 'images' directory
 ## is writable, then set this to true:
-$wgEnableUploads = false;
+$wgEnableUploads = true;
 $wgUseImageMagick = true;
-$wgImageMagickConvertCommand = "/usr/bin/convert";
+
+/*******************************
+ * ConvertPDF2Wiki Dependencies
+ *******************************/
+
+# Allow PDF and DOCX uploads on MW Core
+$wgFileExtensions[] = 'pdf';
+$wgFileExtensions[] = 'docx';
+
+# UploadWizard: allow PDF + DOCX
+$wgUploadWizardConfig['fileExtensions'][] = 'pdf';
+$wgUploadWizardConfig['fileExtensions'][] = 'docx';
+
+
+$wgImageMagickConvertCommand = "/usr/local/bin/convert";
+
+# $wgUploadSizeWarning = 50 * 1024 * 1024;  // 50 MB warning
+# $wgMaxUploadSize = 100 * 1024 * 1024;     // 100 MB max
+
 
 # InstantCommons allows wiki to use images from https://commons.wikimedia.org
 $wgUseInstantCommons = false;
@@ -182,6 +200,7 @@ wfLoadExtension( 'CIForms' );
 wfLoadExtension( 'CodeMirror' );
 wfLoadExtension( 'CollapsibleSections' );
 wfLoadExtension( 'ContributionScores' );
+wfLoadExtension( 'ConvertPDF2Wiki' );
 wfLoadExtension( 'CSS' );
 wfLoadExtension( 'DataTransfer' );
 wfLoadExtension( 'DisplayTitle' );      

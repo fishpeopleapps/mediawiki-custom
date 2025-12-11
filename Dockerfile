@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-# 0. Build ImageMagick 7.1.2-2 from source
+# 0.0 Build ImageMagick 7.1.2-2 from source
 FROM --platform=linux/amd64 php:8.3-apache AS im-builder
 ARG IM_VERSION=7.1.2-2
 RUN set -eux; \
@@ -17,27 +17,15 @@ RUN set -eux; \
   make install; \
   ldconfig
 
-# 0.3 
-FROM --platform=linux/amd64 debian:trixie AS cjson-builder
-ARG CJSON_VER=1.7.19
-RUN set -eux; \
-  apt-get update; \
-  apt-get install -y --no-install-recommends ca-certificates curl build-essential cmake pkg-config && rm -rf /var/lib/apt/lists/*; \
-  curl -fsSL -o /tmp/cjson.tgz https://github.com/DaveGamble/cJSON/archive/refs/tags/v${CJSON_VER}.tar.gz; \
-  mkdir -p /tmp/src && tar -xzf /tmp/cjson.tgz -C /tmp/src --strip-components=1; \
-  cmake -S /tmp/src -B /tmp/build \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_INSTALL_LIBDIR=lib/x86_64-linux-gnu; \
-  cmake --build /tmp/build -j"$(nproc)"; \
-  DESTDIR=/tmp/pkgroot cmake --install /tmp/build --prefix /usr; \
-  install -d /tmp/pkgroot/DEBIAN; \
-  printf "Package: libcjson1\nVersion: %s-0~custom1\nSection: libs\nPriority: optional\nArchitecture: amd64\nDepends: libc6 (>= 2.17)\nMaintainer: KB <kimberly.brewer.11.ctr@spaceforce.mil>\nDescription: Ultralightweight JSON parser in ANSI C (custom build)\n" "$CJSON_VER" > /tmp/pkgroot/DEBIAN/control; \
-  dpkg-deb --build /tmp/pkgroot /tmp/libcjson1_${CJSON_VER}-0~custom1_amd64.deb
-
-# 0.45 Build FFmpeg 8.0 (includes fix for CVE-2025-1594 and codex for transcription)
+# 0.45 Build FFmpeg 8.0 
 FROM --platform=linux/amd64 debian:trixie AS ffmpeg-builder
 ARG FFMPEG_VER=8.0
+
+# Purge Debian's vulnerable ffmpeg and libav libraries
+RUN set -eux; \
+  apt-get purge -y 'ffmpeg' 'libav*' 'libsw*' 'libpostproc*' || true; \
+  apt-get autoremove -y || true; \
+  apt-get autoclean -y || true
 
 RUN set -eux; \
   apt-get update; \
@@ -69,35 +57,6 @@ RUN set -eux; \
   make install; \
   strip /usr/local/bin/ffmpeg /usr/local/bin/ffprobe
 
-
-
-# 0.50 Build curl/libcurl (fix CVE-2025-9086)
-FROM --platform=linux/amd64 debian:bookworm-slim AS curl-builder
-ARG CURL_VER=8.16.0
-RUN set -eux; \
-  apt-get update; \
-  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    ca-certificates build-essential pkg-config xz-utils curl \
-    libssl-dev zlib1g-dev libzstd-dev libbrotli-dev libnghttp2-dev \
-    libidn2-0-dev libpsl-dev; \
-  rm -rf /var/lib/apt/lists/*; \
-  curl -fsSL -o /tmp/curl.tar.xz "https://curl.se/download/curl-${CURL_VER}.tar.xz"; \
-  tar -C /tmp -xf /tmp/curl.tar.xz; \
-  cd /tmp/curl-${CURL_VER}; \
-  ./configure \
-    --prefix=/opt/curl \
-    --with-openssl \
-    --with-zlib \
-    --with-brotli \
-    --with-zstd \
-    --with-nghttp2 \
-    --enable-threaded-resolver; \
-  make -j"$(nproc)"; \
-  make install; \
-  strip --strip-unneeded /opt/curl/bin/curl || true; \
-  strip --strip-unneeded /opt/curl/lib/libcurl.so.* || true; \
-  ls -l /opt/curl/lib/libcurl.so* /opt/curl/include/curl
-
 # 0.6 Build yq v4.44.3 with patched Go (CVE-2025-22871)
 FROM --platform=linux/amd64 golang:1.24.6-bookworm AS yq-builder
 ARG YQ_VERSION=v4.44.3
@@ -108,10 +67,8 @@ RUN set -eux; \
   tar -xzf yq.tgz --strip-components=1; \
   go build -trimpath -ldflags="-s -w" -o /usr/local/bin/yq .
 
-
-# 0.7 Pull in Apache PHP 8.3 
+# 0.8 Pull in Apache PHP 8.3 
 FROM --platform=linux/amd64 php:8.3-apache-trixie
-
 # 1. --- Build args ---
 ARG MEDIAWIKI_VERSION=1.43.3
 ENV MEDIAWIKI_TARBALL=https://releases.wikimedia.org/mediawiki/1.43/mediawiki-1.43.3.tar.gz
@@ -138,10 +95,6 @@ RUN set -eux; \
     test -f "${APACHE_DOCUMENT_ROOT}/vendor/autoload.php" && \
     test -d "${APACHE_DOCUMENT_ROOT}/vendor/psr/log" && \
     chown -R www-data:www-data "${APACHE_DOCUMENT_ROOT}/vendor"
-
-# 2.7 Strip Windows-only helper apps to eliminate Cygwin DLL (CVE-2016-3067)
-RUN set -eux; \
-  rm -rf /var/www/html/vendor/james-heinrich/getid3/helperapps
 
 # 3. Run Tools
 RUN set -eux; \
@@ -199,48 +152,15 @@ RUN set -eux; \
     apt-mark manual ghostscript poppler-utils; \
     rm -rf /var/lib/apt/lists/*
 
-# 9.05 (fixes CVE-2024-2398, 2025-0725, 2025-59375, 2025-9900, 2025-9086)
-RUN echo 'deb http://deb.debian.org/debian sid main' > /etc/apt/sources.list.d/sid.list && \
-    printf 'Package: *\nPin: release a=sid\nPin-Priority: 1001\n' > /etc/apt/preferences.d/99sid && \
-    apt-get update && apt-get install -y --no-install-recommends --only-upgrade \
-      curl \
-      libcurl4t64 \
-      libcurl3t64-gnutls \
-      libexpat1 \
-      libtiff6 && \
-    rm -rf /etc/apt/sources.list.d/sid.list /etc/apt/preferences.d/99sid /var/lib/apt/lists/*
 
-# 9.06 — remove stale package metadata that causes Grype false positives of 2398/0725/9086/59375 (?)
-RUN set -eux; \
-    rm -rf \
-      /var/cache/apt/archives/* \
-      /usr/share/doc/* \
-      /usr/share/man/* \
-      /usr/share/locale/* \
-      /usr/share/info/* \
-      /usr/share/lintian/* \
-      /usr/share/linda/* \
-      /usr/share/bash-completion/* \
-      || true
-
-# 9.08 — upgrade libtiff safely rather than purge it(CVE-2025-9909)
-RUN set -eux; \
-    echo 'deb http://deb.debian.org/debian sid main' > /etc/apt/sources.list.d/sid.list; \
-    printf 'Package: *\nPin: release a=sid\nPin-Priority: 1001\n' > /etc/apt/preferences.d/99sid; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends -t sid libtiff6; \
-    apt-mark hold libtiff6; \
-    rm -rf /etc/apt/sources.list.d/sid.list /etc/apt/preferences.d/99sid /var/lib/apt/lists/*
-
-
-# 9.1 Ensure apache2 present and protected from autoremove (fix CVE-2025-9086)
+# 9.1 Ensure apache2 present and protected from autoremove 
 RUN set -eux; \
   apt-get update; \
   DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apache2-bin && rm -rf /var/lib/apt/lists/*; \
   apt-mark manual apache2-bin; \
   ln -sf /usr/sbin/apache2 /usr/local/bin/apache2
 
-# 9.15 Pin base Apache packages so autoremove won't delete them (fix CVE-2025-9086)
+# 9.15 Pin base Apache packages so autoremove won't delete them 
 RUN set -eux; apt-mark manual apache2 apache2-bin apache2-data apache2-utils
 
 # 9.2 Remove unused audio libs to drop CVEs (libsndfile + pulseaudio client)
@@ -248,28 +168,6 @@ RUN set -eux; \
   apt-get update; \
   DEBIAN_FRONTEND=noninteractive apt-get purge -y libpulse0 libsndfile1 || true; \
   rm -rf /var/lib/apt/lists/*
-
-# 9.3 Remove Python runtime (eliminate CVE-2025-8194 package flags)
-RUN set -eux; \
-  apt-get update; \
-  DEBIAN_FRONTEND=noninteractive apt-get purge -y python3-pygments python3.13 python3.13-minimal libpython3.13-stdlib libpython3.13-minimal python3 || true; \
-  rm -rf /var/lib/apt/lists/*
-
-# 9.4 Remove doc/help entries that can trigger Cygwin signatures
-RUN set -eux; \
-  rm -rf /usr/share/man /usr/share/doc || true; \
-  rm -rf /usr/share/vim/*/doc || true; \
-  rm -rf /usr/share/zsh/help || true; \
-  find /usr/share/terminfo -type f -iname 'cygwin*' -delete || true
-
-# 9.45 Upgrade libcjson1 to 1.7.19 (fix CVE-2025-57052)
-COPY --from=cjson-builder /tmp/libcjson1_1.7.19-0~custom1_amd64.deb /tmp/libcjson1.deb
-RUN set -eux; \
-    dpkg -i /tmp/libcjson1.deb; \
-    ldconfig; \
-    apt-mark hold libcjson1; \
-    dpkg -s libcjson1 | grep -q '^Version: 1.7.19-0~custom1'; \
-    rm -f /tmp/libcjson1.deb
 
 # 9.5 Install ImageMagick from builder stage (#0)
 COPY --from=im-builder /usr/local /usr/local
@@ -304,8 +202,11 @@ RUN set -eux; \
 # 10.1 Ensure pecl imagick finds MagickWand-7 from /usr/local
 ENV PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
 
-# 10.2 PECL extensions
+# 10.2 PECL extensions 
 RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends wget; \
+    rm -rf /var/lib/apt/lists/*; \
     pecl install apcu imagick && \
     pecl install LuaSandbox-4.1.2 && docker-php-ext-enable luasandbox && \
     docker-php-ext-enable apcu imagick
@@ -316,20 +217,14 @@ RUN COMPOSER_ALLOW_SUPERUSER=1 composer install \
     --no-dev --prefer-dist --no-interaction --no-progress \
  && chown -R www-data:www-data /var/www/html
 
-# 10.6 Remove Windows-only helper apps from getID3 (post-composer) 
-RUN set -eux; \
-  rm -rf /var/www/html/vendor/james-heinrich/getid3/helperapps; \
-  rm -f /var/www/html/vendor/james-heinrich/getid3/getid3/module.audio.shorten.php
-
 # 11. Apache tweaks
 RUN a2enmod rewrite headers expires && \
     sed -ri 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf && \
     sed -i 's#</VirtualHost>#\tAllowEncodedSlashes NoDecode\n</VirtualHost>#' /etc/apache2/sites-available/000-default.conf
 
-# 11.5 Allow .htaccess overrides
+# 11.5 Allow .htaccess overrides <- Not sure this is working
 RUN printf "<Directory /var/www/html>\nAllowOverride All\n</Directory>\n" \
       > /etc/apache2/conf-available/override.conf && a2enconf override
-
 
 # 12. Writable dirs for file cache/uploads
 RUN set -eux; \
@@ -337,42 +232,17 @@ RUN set -eux; \
       "${APACHE_DOCUMENT_ROOT}/images" \
       "${APACHE_DOCUMENT_ROOT}/cache"
 
-# 13. Note Install path for Vendor files!
+# 13. Note Install path for Vendor files! < - feels like this should be with the vendor block above?
 ENV MW_COMPOSER_VENDOR_DIR=/var/www/html/vendor
 
-# 14. Expose the port & provide healthcheck
+# 14. Expose the port & provide healthcheck <- purpose of the health check? 
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=5s --retries=5 CMD curl -fsS http://localhost/ || exit 1
 
-# 15. PHP overrides 
+# 15. PHP overrides <- not using this yet
 COPY docker/php/php-overrides.ini /usr/local/etc/php/conf.d/99-overrides.ini
 
-# 15.5 — Install patched curl/libcurl 8.16.0 from Debian sid (fix CVE-2025-9086)
-RUN set -eux; \
-    printf 'deb http://deb.debian.org/debian sid main\n' > /etc/apt/sources.list.d/sid.list; \
-    printf 'Package: curl libcurl*\nPin: release a=sid\nPin-Priority: 1001\n' \
-      > /etc/apt/preferences.d/999-curl; \
-    apt-get update; \
-    apt-get install -y -t sid --no-install-recommends \
-        curl \
-        libcurl4t64 \
-        libcurl4-openssl-dev; \
-    apt-mark hold curl libcurl4t64 libcurl4-openssl-dev; \
-    rm -rf /var/lib/apt/lists/*
-
-
-# 16 – Rebuild php-curl against system libcurl 8.16.0 and remove build deps - CVE-2025-9086
-RUN set -eux; \
-  rm -f /etc/ld.so.conf.d/opt-curl.conf || true; \
-  rm -rf /opt/curl || true; \
-  rm -f /usr/local/bin/curl || true; \
-  apt-get update; \
-  apt-get install -y -t sid --no-install-recommends libcurl4-openssl-dev && rm -rf /var/lib/apt/lists/*; \
-  docker-php-ext-configure curl; \
-  docker-php-ext-install -j"$(nproc)" curl; \
-  rm -rf /var/lib/apt/lists/*
-
-# 17 Ensure apache2 is on PATH for apache2-foreground to prevent cycling cont, (fix CVE-2025-9086)
+# 16 Ensure apache2 is on PATH for apache2-foreground to prevent cycling cont
 RUN set -eux; \
   if ! command -v apache2 >/dev/null 2>&1; then \
     apt-get update; \
@@ -381,9 +251,42 @@ RUN set -eux; \
   ln -sf /usr/sbin/apache2 /usr/local/bin/apache2; \
   command -v apache2
 
-# 18. Pin Apache so cleanup won't remove it again (only if installed) (fix CVE-2025-9086)
+# 17. Pin Apache so cleanup won't remove it again (only if installed) (fix CVE-2025-9086)
 RUN set -eux; \
   for p in apache2 apache2-bin apache2-data apache2-utils; do \
     if dpkg -s "$p" >/dev/null 2>&1; then apt-mark manual "$p"; fi; \
   done
 
+# 18. Install ConvertPDF2Wiki runtime dependencies (pandoc + pdf2docx)
+RUN set -eux; \
+    apt-get update; \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        python3 \
+        python3-pip \
+        pandoc; \
+    pip3 install --no-cache-dir --break-system-packages pdf2docx; \
+    rm -rf /var/lib/apt/lists/*
+
+# 18.5 Remove Python runtime (eliminate CVE-2025-8194 package flags)
+RUN set -eux; \
+  apt-get update; \
+  DEBIAN_FRONTEND=noninteractive apt-get purge -y python3-pygments python3.13 python3.13-minimal libpython3.13-stdlib libpython3.13-minimal python3 || true; \
+  rm -rf /var/lib/apt/lists/*
+
+# 19 remove vulnerable ffmpeg libraries introduced from pip (ConvertPDF2Wiki)
+RUN set -eux; \
+  find /usr/local/lib -type f \( \
+    -name 'libav*' -o \
+    -name 'libsw*' -o \
+    -name 'libpostproc*' \
+  \) -delete || true; \
+  find /usr/local/lib -type d -name 'opencv_python_headless.libs' -exec rm -rf {} + || true;
+
+# 20 Remove Cygwin References (CVE-2016-3067) 
+RUN set -eux; \
+  rm -rf /var/www/html/vendor/james-heinrich/getid3/helperapps || true; \
+  rm -f /var/www/html/vendor/james-heinrich/getid3/getid3/module.audio.shorten.php || true; \
+  rm -rf /usr/share/man /usr/share/doc || true; \
+  rm -rf /usr/share/vim/*/doc || true; \
+  rm -rf /usr/share/zsh/help || true; \
+  find /usr/share/terminfo -type f -iname 'cygwin*' -delete || true
