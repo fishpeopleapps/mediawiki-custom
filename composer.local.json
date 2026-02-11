@@ -11,5 +11,8 @@
         "smarty/smarty": "^4.3",
         "ruflin/elastica": "^7.0",
         "wikimedia/css-sanitizer": "^5.1.0"
+    }, 
+    "replace": {
+      "phpunit/phpunit": "*"
     }
   }
