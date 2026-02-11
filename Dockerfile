@@ -17,16 +17,18 @@ RUN set -eux; \
   make install; \
   ldconfig
 
-# 0.45 Build FFmpeg 8.0 
+# 0.45 Build FFmpeg 8.0.1 (fixes CVE-2025-63757)
 FROM --platform=linux/amd64 debian:trixie AS ffmpeg-builder
-ARG FFMPEG_VER=8.0
+ARG FFMPEG_VER=8.0.1
 
-# Purge Debian's vulnerable ffmpeg and libav libraries
+# 0.5 Purge Debian's vulnerable ffmpeg and libav libraries
 RUN set -eux; \
   apt-get purge -y 'ffmpeg' 'libav*' 'libsw*' 'libpostproc*' || true; \
   apt-get autoremove -y || true; \
   apt-get autoclean -y || true
 
+# 0.55 Install FFmpeg build dependencies + codec development headers, then download FFmpeg source,
+# configure it with the desired codec support, compile, and install ffmpeg/ffprobe into /usr/local.
 RUN set -eux; \
   apt-get update; \
   apt-get install -y --no-install-recommends \
@@ -70,8 +72,8 @@ RUN set -eux; \
 # 0.8 Pull in Apache PHP 8.3 
 FROM --platform=linux/amd64 php:8.3-apache-trixie
 # 1. --- Build args ---
-ARG MEDIAWIKI_VERSION=1.43.3
-ENV MEDIAWIKI_TARBALL=https://releases.wikimedia.org/mediawiki/1.43/mediawiki-1.43.3.tar.gz
+ARG MEDIAWIKI_VERSION=1.43.6
+ENV MEDIAWIKI_TARBALL=https://releases.wikimedia.org/mediawiki/1.43/mediawiki-1.43.6.tar.gz
 
 # 2. Fetch & unpack MediaWiki
 ENV APACHE_DOCUMENT_ROOT=/var/www/html
@@ -125,7 +127,8 @@ RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
  && php -r "unlink('composer-setup.php');" \
  && composer --version
 
-# 9. Run System Dependencies
+# 9. Run System Dependencies - removed mariadb to mitigate CVE-2025-13699
+# Remove gnupg to mitigate CVE-2026-24882
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
@@ -143,11 +146,9 @@ RUN set -eux; \
       pkg-config \
       ghostscript \
       poppler-utils \
-      mariadb-client \
       curl \
       ca-certificates \
       unzip \
-      gnupg \
     ; \
     apt-mark manual ghostscript poppler-utils; \
     rm -rf /var/lib/apt/lists/*
@@ -181,7 +182,7 @@ COPY --from=ffmpeg-builder /usr/lib/x86_64-linux-gnu/libvpx.so.*  /usr/lib/x86_6
 COPY --from=ffmpeg-builder /usr/lib/x86_64-linux-gnu/libmp3lame.so.* /usr/lib/x86_64-linux-gnu/
 COPY --from=ffmpeg-builder /usr/lib/x86_64-linux-gnu/libopus.so.* /usr/lib/x86_64-linux-gnu/
 RUN apt-get update && apt-get install -y libnuma1 && rm -rf /var/lib/apt/lists/*
-RUN ldconfig && ffmpeg -version | head -n1 | grep -q "^ffmpeg version 8.0"
+RUN ldconfig && ffmpeg -version | head -n1 | grep -q "^ffmpeg version 8.0.1"
 
 # 10. Run PHP Extensions
 RUN set -eux; \
@@ -211,10 +212,12 @@ RUN set -eux; \
     pecl install LuaSandbox-4.1.2 && docker-php-ext-enable luasandbox && \
     docker-php-ext-enable apcu imagick
 
+ENV COMPOSER_ROOT_VERSION=1.43.6
+
 # 10.5 Provide extension deps without touching core's composer.json/lock
 COPY composer.local.json /var/www/html/composer.local.json
 RUN COMPOSER_ALLOW_SUPERUSER=1 composer install \
-    --no-dev --prefer-dist --no-interaction --no-progress \
+    --no-dev --prefer-dist --no-interaction --no-progress\
  && chown -R www-data:www-data /var/www/html
 
 # 11. Apache tweaks
@@ -239,7 +242,7 @@ ENV MW_COMPOSER_VENDOR_DIR=/var/www/html/vendor
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=5s --retries=5 CMD curl -fsS http://localhost/ || exit 1
 
-# 15. PHP overrides <- not using this yet
+# 15. PHP runtime overrides (consumes PHP_* env vars with defaults)
 COPY docker/php/php-overrides.ini /usr/local/etc/php/conf.d/99-overrides.ini
 
 # 16 Ensure apache2 is on PATH for apache2-foreground to prevent cycling cont
@@ -259,19 +262,17 @@ RUN set -eux; \
 
 # 18. Install ConvertPDF2Wiki runtime dependencies (pandoc + pdf2docx)
 RUN set -eux; \
+    echo "deb http://deb.debian.org/debian sid main" > /etc/apt/sources.list.d/sid.list; \
+    printf 'Package: python3 python3-minimal python3.13 python3.13-minimal libpython3.13-stdlib libpython3.13-minimal\nPin: release a=sid\nPin-Priority: 990\n\nPackage: *\nPin: release a=sid\nPin-Priority: 50\n' > /etc/apt/preferences.d/pin-python-from-sid; \
     apt-get update; \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         python3 \
         python3-pip \
         pandoc; \
     pip3 install --no-cache-dir --break-system-packages pdf2docx; \
+    apt-get purge -y python3-wheel; \
+    apt-get autoremove -y; \
     rm -rf /var/lib/apt/lists/*
-
-# 18.5 Remove Python runtime (eliminate CVE-2025-8194 package flags)
-RUN set -eux; \
-  apt-get update; \
-  DEBIAN_FRONTEND=noninteractive apt-get purge -y python3-pygments python3.13 python3.13-minimal libpython3.13-stdlib libpython3.13-minimal python3 || true; \
-  rm -rf /var/lib/apt/lists/*
 
 # 19 remove vulnerable ffmpeg libraries introduced from pip (ConvertPDF2Wiki)
 RUN set -eux; \

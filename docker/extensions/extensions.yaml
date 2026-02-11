@@ -26,6 +26,10 @@ extensions:
     - CSS:
             repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/CSS
             branch: REL1_43
+    - FlexForm:
+            repository: https://github.com/Open-CSP/FlexForm.git
+            branch: REL1_43
+
     - DisplayTitle:
             repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/DisplayTitle
             branch: REL1_43
@@ -82,9 +86,6 @@ extensions:
     - CIForms:
             repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/CIForms
             branch: master
-    - DataTransfer:
-            repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/DataTransfer
-            branch: REL1_43
     - ExternalData:
             repository: https://gerrit.wikimedia.org/r/mediawiki/extensions/ExternalData
             branch: REL1_43
@@ -99,6 +100,9 @@ extensions:
     - SemanticExtraSpecialProperties:
             repository: https://github.com/SemanticMediaWiki/SemanticExtraSpecialProperties.git
             tag: 4.0.0
+    - SMWApprovedRevsDataSync:
+            repository: https://github.com/walkwithdeath/SMWApprovedRevsDataSync.git
+            branch: main
 
     # --- Search ---
     - Elastica:
@@ -131,11 +135,17 @@ extensions:
             branch: master
 
     # --- Cust Ext ---
+    - Classification:
+            repository: https://github.com/fishpeopleapps/classification.git
+            branch: main
     - SaneCrumbs:
             repository: https://github.com/fishpeopleapps/SaneCrumbs.git
             branch: main
     - VideoPermission:
             repository: https://github.com/fishpeopleapps/VideoPermission.git
+            branch: main
+    - WikiAnalytics:
+            repository: https://github.com/fishpeopleapps/WikiAnalytics.git
             branch: main
 
 skins:

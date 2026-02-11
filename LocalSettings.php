@@ -165,6 +165,7 @@ wfLoadExtension( 'SemanticMediaWiki' );
 ################################################
 # Extensions that are bundled with MediaWiki Core
 ################################################
+wfLoadExtension('SMWApprovedRevsDataSync');
 wfLoadExtension('CategoryTree'); 
 wfLoadExtension('Cite');
 wfLoadExtension('Echo'); 
@@ -202,7 +203,6 @@ wfLoadExtension( 'CollapsibleSections' );
 wfLoadExtension( 'ContributionScores' );
 wfLoadExtension( 'ConvertPDF2Wiki' );
 wfLoadExtension( 'CSS' );
-wfLoadExtension( 'DataTransfer' );
 wfLoadExtension( 'DisplayTitle' );      
 wfLoadExtension( 'ExternalData' );
 // wfLoadExtension( 'FlexForm' ); // currently removed because phpoffice - see backlog ticket
@@ -232,6 +232,7 @@ wfLoadExtension( 'Variables' );
 wfLoadExtension( 'VEForAll' );
 wfLoadExtension( 'WatchAnalytics' );
 wfLoadExtension( 'Widgets' );
+wfLoadExtension( 'WikiAnalytics');
 wfLoadExtension( 'WikiForum' );
 
 
