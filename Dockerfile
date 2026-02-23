@@ -267,10 +267,16 @@ RUN set -eux; \
     apt-get update; \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         python3 \
-        python3-pip \
-        pandoc; \
+        python3-pip; \
+    \
+    rm /etc/apt/sources.list.d/sid.list; \
+    rm /etc/apt/preferences.d/pin-python-from-sid; \
+    apt-get update; \
+    \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends pandoc; \
+    \
     pip3 install --no-cache-dir --break-system-packages pdf2docx; \
-    apt-get purge -y python3-wheel; \
+    apt-get purge -y python3-wheel || true; \
     apt-get autoremove -y; \
     rm -rf /var/lib/apt/lists/*
 
