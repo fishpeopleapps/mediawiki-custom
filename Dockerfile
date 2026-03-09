@@ -150,9 +150,10 @@ RUN set -eux; \
       ca-certificates \
       unzip \
     ; \
+    apt-get purge -y gnupg gpg gpg-agent gpgv dirmngr || true; \
+    apt-get autoremove -y; \
     apt-mark manual ghostscript poppler-utils; \
     rm -rf /var/lib/apt/lists/*
-
 
 # 9.1 Ensure apache2 present and protected from autoremove 
 RUN set -eux; \
