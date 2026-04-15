@@ -4,6 +4,7 @@
         "firebase/php-jwt": "^7.0",
         "mediawiki/cargo": "^3.8.4",
         "james-heinrich/getid3": "^1.9",
+        "ezyang/htmlpurifier": "^4.17",
         "mediawiki/semantic-media-wiki": "6.0.1",
         "mediawiki/semantic-result-formats": "5.0",
         "mediawiki/simple-batch-upload": "3.0.0",
