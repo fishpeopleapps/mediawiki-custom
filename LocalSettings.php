@@ -205,7 +205,7 @@ wfLoadExtension( 'ConvertPDF2Wiki' );
 wfLoadExtension( 'CSS' );
 wfLoadExtension( 'DisplayTitle' );      
 wfLoadExtension( 'ExternalData' );
-// wfLoadExtension( 'FlexForm' ); // currently removed because phpoffice - see backlog ticket
+wfLoadExtension( 'FlexForm' );
 wfLoadExtension( 'GlobalNotice' );
 wfLoadExtension( 'HeaderTabs' );
 wfLoadExtension( 'HitCounters' );
@@ -232,7 +232,7 @@ wfLoadExtension( 'Variables' );
 wfLoadExtension( 'VEForAll' );
 wfLoadExtension( 'WatchAnalytics' );
 wfLoadExtension( 'Widgets' );
-wfLoadExtension( 'WikiAnalytics');
+// wfLoadExtension( 'WikiAnalytics');
 wfLoadExtension( 'WikiForum' );
 
 

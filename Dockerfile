@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 # 0.0 Build ImageMagick 7.1.2-2 from source
-FROM --platform=linux/amd64 php:8.3-apache AS im-builder
+FROM --platform=linux/amd64 php:8.4-apache AS im-builder
 ARG IM_VERSION=7.1.2-2
 RUN set -eux; \
   apt-get update; \
@@ -69,11 +69,15 @@ RUN set -eux; \
   tar -xzf yq.tgz --strip-components=1; \
   go build -trimpath -ldflags="-s -w" -o /usr/local/bin/yq .
 
-# 0.8 Pull in Apache PHP 8.3 
-FROM --platform=linux/amd64 php:8.3-apache-trixie
+# 0.8 Pull in Apache PHP 8.4 (28390, 28388, 31790, 2673)
+FROM --platform=linux/amd64 php:8.4-apache-trixie
+RUN set -eux; \
+    apt-get update; \
+    DEBIAN_FRONTEND=noninteractive apt-get -y upgrade; \
+    rm -rf /var/lib/apt/lists/*
 # 1. --- Build args ---
-ARG MEDIAWIKI_VERSION=1.43.6
-ENV MEDIAWIKI_TARBALL=https://releases.wikimedia.org/mediawiki/1.43/mediawiki-1.43.6.tar.gz
+ARG MEDIAWIKI_VERSION=1.43.8
+ENV MEDIAWIKI_TARBALL=https://releases.wikimedia.org/mediawiki/1.43/mediawiki-1.43.8.tar.gz
 
 # 2. Fetch & unpack MediaWiki
 ENV APACHE_DOCUMENT_ROOT=/var/www/html
@@ -213,7 +217,7 @@ RUN set -eux; \
     pecl install LuaSandbox-4.1.2 && docker-php-ext-enable luasandbox && \
     docker-php-ext-enable apcu imagick
 
-ENV COMPOSER_ROOT_VERSION=1.43.6
+ENV COMPOSER_ROOT_VERSION=1.43.8
 
 # 10.5 Provide extension deps without touching core's composer.json/lock
 COPY composer.local.json /var/www/html/composer.local.json
@@ -261,25 +265,17 @@ RUN set -eux; \
     if dpkg -s "$p" >/dev/null 2>&1; then apt-mark manual "$p"; fi; \
   done
 
-# 18. Install ConvertPDF2Wiki runtime dependencies (pandoc + pdf2docx)
-RUN set -eux; \
-    echo "deb http://deb.debian.org/debian sid main" > /etc/apt/sources.list.d/sid.list; \
-    printf 'Package: python3 python3-minimal python3.13 python3.13-minimal libpython3.13-stdlib libpython3.13-minimal\nPin: release a=sid\nPin-Priority: 990\n\nPackage: *\nPin: release a=sid\nPin-Priority: 50\n' > /etc/apt/preferences.d/pin-python-from-sid; \
-    apt-get update; \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        python3 \
-        python3-pip; \
-    \
-    rm /etc/apt/sources.list.d/sid.list; \
-    rm /etc/apt/preferences.d/pin-python-from-sid; \
-    apt-get update; \
-    \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends pandoc; \
-    \
-    pip3 install --no-cache-dir --break-system-packages pdf2docx; \
-    apt-get purge -y python3-wheel || true; \
-    apt-get autoremove -y; \
-    rm -rf /var/lib/apt/lists/*
+# 18. Install ConvertPDF2Wiki runtime dependencies (commenting out because python is so problematic)
+# RUN set -eux; \
+#     apt-get update; \
+#     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+#         python3 \
+#         python3-pip \
+#         pandoc; \
+#     pip3 install --no-cache-dir --break-system-packages pdf2docx; \
+#     apt-get purge -y python3-wheel || true; \
+#     apt-get autoremove -y; \
+#     rm -rf /var/lib/apt/lists/*
 
 # 19 remove vulnerable ffmpeg libraries introduced from pip (ConvertPDF2Wiki)
 RUN set -eux; \
