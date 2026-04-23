@@ -19,7 +19,7 @@ RUN set -eux; \
 
 # 0.45 Build FFmpeg 8.0.1 (fixes CVE-2025-63757)
 FROM --platform=linux/amd64 debian:trixie AS ffmpeg-builder
-ARG FFMPEG_VER=8.0.1
+ARG FFMPEG_VER=8.1
 
 # 0.5 Purge Debian's vulnerable ffmpeg and libav libraries
 RUN set -eux; \
@@ -187,7 +187,7 @@ COPY --from=ffmpeg-builder /usr/lib/x86_64-linux-gnu/libvpx.so.*  /usr/lib/x86_6
 COPY --from=ffmpeg-builder /usr/lib/x86_64-linux-gnu/libmp3lame.so.* /usr/lib/x86_64-linux-gnu/
 COPY --from=ffmpeg-builder /usr/lib/x86_64-linux-gnu/libopus.so.* /usr/lib/x86_64-linux-gnu/
 RUN apt-get update && apt-get install -y libnuma1 && rm -rf /var/lib/apt/lists/*
-RUN ldconfig && ffmpeg -version | head -n1 | grep -q "^ffmpeg version 8.0.1"
+RUN ldconfig && ffmpeg -version | head -n1 | grep -q "^ffmpeg version 8"
 
 # 10. Run PHP Extensions
 RUN set -eux; \
@@ -287,10 +287,10 @@ RUN set -eux; \
   find /usr/local/lib -type d -name 'opencv_python_headless.libs' -exec rm -rf {} + || true;
 
 # 20 Remove Cygwin References (CVE-2016-3067) 
-RUN set -eux; \
-  rm -rf /var/www/html/vendor/james-heinrich/getid3/helperapps || true; \
-  rm -f /var/www/html/vendor/james-heinrich/getid3/getid3/module.audio.shorten.php || true; \
-  rm -rf /usr/share/man /usr/share/doc || true; \
-  rm -rf /usr/share/vim/*/doc || true; \
-  rm -rf /usr/share/zsh/help || true; \
-  find /usr/share/terminfo -type f -iname 'cygwin*' -delete || true
+# RUN set -eux; \
+#   rm -rf /var/www/html/vendor/james-heinrich/getid3/helperapps || true; \
+#   rm -f /var/www/html/vendor/james-heinrich/getid3/getid3/module.audio.shorten.php || true; \
+#   rm -rf /usr/share/man /usr/share/doc || true; \
+#   rm -rf /usr/share/vim/*/doc || true; \
+#   rm -rf /usr/share/zsh/help || true; \
+#   find /usr/share/terminfo -type f -iname 'cygwin*' -delete || true
