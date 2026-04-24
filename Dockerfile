@@ -286,11 +286,11 @@ RUN set -eux; \
   \) -delete || true; \
   find /usr/local/lib -type d -name 'opencv_python_headless.libs' -exec rm -rf {} + || true;
 
-# 20 Remove Cygwin References (CVE-2016-3067) 
-# RUN set -eux; \
-#   rm -rf /var/www/html/vendor/james-heinrich/getid3/helperapps || true; \
-#   rm -f /var/www/html/vendor/james-heinrich/getid3/getid3/module.audio.shorten.php || true; \
-#   rm -rf /usr/share/man /usr/share/doc || true; \
-#   rm -rf /usr/share/vim/*/doc || true; \
-#   rm -rf /usr/share/zsh/help || true; \
-#   find /usr/share/terminfo -type f -iname 'cygwin*' -delete || true
+# 20 Remove Cygwin References (CVE-2016-3067) - still applicable on 23/April/2026
+RUN set -eux; \
+  rm -rf /var/www/html/vendor/james-heinrich/getid3/helperapps || true; \
+  rm -f /var/www/html/vendor/james-heinrich/getid3/getid3/module.audio.shorten.php || true; \
+  rm -rf /usr/share/man /usr/share/doc || true; \
+  rm -rf /usr/share/vim/*/doc || true; \
+  rm -rf /usr/share/zsh/help || true; \
+  find /usr/share/terminfo -type f -iname 'cygwin*' -delete || true
